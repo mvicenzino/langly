@@ -1,8 +1,8 @@
 [phases.setup]
-nixPkgs = ["python311", "gcc"]
+nixPkgs = ["python311", "python311Packages.pip", "gcc"]
 
 [phases.install]
-cmds = ["pip install -r backend/requirements.txt"]
+cmds = ["python3.11 -m pip install -r backend/requirements.txt"]
 
 [start]
-cmd = "python -c 'from backend.db import init_tables; init_tables()' && gunicorn --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker --workers 1 --bind 0.0.0.0:$PORT backend.run:app"
+cmd = "python3.11 -c 'from backend.db import init_tables; init_tables()' && python3.11 -m gunicorn --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker --workers 1 --bind 0.0.0.0:$PORT backend.run:app"
