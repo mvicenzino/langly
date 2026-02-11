@@ -72,7 +72,7 @@ function App() {
   const [activeCategory, setActiveCategory] = useState('dashboard');
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [chatOpen, setChatOpen] = useState(true);
+  const [chatOpen, setChatOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const sendToChat = useRef<((msg: string) => void) | null>(null);
 
