@@ -47,15 +47,25 @@ def create_app():
     from backend.sockets.chat_handler import register_handlers
     register_handlers(socketio)
 
-    # Serve frontend in production
+    # Serve frontend in production (only when dist exists)
     @app.route("/")
     def index():
-        return app.send_static_file("index.html")
+        try:
+            return app.send_static_file("index.html")
+        except Exception:
+            return "Langly API is running. Frontend is served separately.", 200
 
     @app.errorhandler(404)
     def not_found(e):
+        # For API routes, return JSON 404
+        from flask import request as req
+        if req.path.startswith("/api/"):
+            return {"error": "Not found"}, 404
         # SPA fallback — serve index.html for client-side routing
-        return app.send_static_file("index.html")
+        try:
+            return app.send_static_file("index.html")
+        except Exception:
+            return {"error": "Not found"}, 404
 
     socketio.init_app(app)
     return app
