@@ -129,6 +129,23 @@ def init_tables():
                     metadata JSONB DEFAULT '{}',
                     created_at TIMESTAMPTZ DEFAULT NOW()
                 );
+                CREATE TABLE IF NOT EXISTS contacts (
+                    id SERIAL PRIMARY KEY,
+                    name TEXT NOT NULL,
+                    company TEXT DEFAULT '',
+                    email TEXT DEFAULT '',
+                    phone TEXT DEFAULT '',
+                    notes TEXT DEFAULT '',
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                );
+                CREATE TABLE IF NOT EXISTS note_mentions (
+                    id SERIAL PRIMARY KEY,
+                    note_id INTEGER NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+                    contact_id INTEGER NOT NULL REFERENCES contacts(id) ON DELETE CASCADE,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    UNIQUE(note_id, contact_id)
+                );
             """)
             conn.commit()
     except Exception:

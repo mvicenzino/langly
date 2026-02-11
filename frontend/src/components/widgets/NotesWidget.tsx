@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useNotes } from '../../hooks/useNotes';
 import { fetchDriveFiles } from '../../api/drive';
+import { searchContacts } from '../../api/contacts';
 import type { DriveFile } from '../../types/drive';
+import type { ContactSearchResult } from '../../types/contacts';
 import { WidgetPanel } from '../layout/WidgetPanel';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
 
@@ -56,6 +58,15 @@ export function NotesWidget() {
   const [editContent, setEditContent] = useState('');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
+  // @mention autocomplete state
+  const [, setMentionQuery] = useState('');
+  const [mentionResults, setMentionResults] = useState<ContactSearchResult[]>([]);
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false);
+  const [mentionStartPos, setMentionStartPos] = useState(-1);
+  const [selectedMentionIdx, setSelectedMentionIdx] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const mentionTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+
   const refreshDrive = useCallback(async () => {
     setDriveLoading(true);
     try {
@@ -105,6 +116,96 @@ export function NotesWidget() {
     }
   }
 
+  // Detect @mention typing
+  function handleTextareaChange(e: React.ChangeEvent<HTMLTextAreaElement>) {
+    const val = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    handleContentChange(val);
+
+    // Look backwards from cursor for an @ that starts a mention
+    const textBeforeCursor = val.slice(0, cursorPos);
+    const atMatch = textBeforeCursor.match(/@([A-Za-z]*)$/);
+    if (atMatch) {
+      const query = atMatch[1];
+      setMentionStartPos(cursorPos - query.length - 1); // position of @
+      setMentionQuery(query);
+      setSelectedMentionIdx(0);
+
+      // Debounced search
+      clearTimeout(mentionTimerRef.current);
+      if (query.length > 0) {
+        mentionTimerRef.current = setTimeout(async () => {
+          try {
+            const results = await searchContacts(query);
+            setMentionResults(results);
+            setShowMentionDropdown(results.length > 0);
+          } catch {
+            setShowMentionDropdown(false);
+          }
+        }, 150);
+      } else {
+        // Show all contacts on bare @
+        mentionTimerRef.current = setTimeout(async () => {
+          try {
+            const results = await searchContacts('');
+            // Show up to 5 contacts on bare @
+            setMentionResults(results.slice(0, 5));
+            setShowMentionDropdown(results.length > 0);
+          } catch {
+            setShowMentionDropdown(false);
+          }
+        }, 150);
+      }
+    } else {
+      setShowMentionDropdown(false);
+    }
+  }
+
+  function insertMention(contact: ContactSearchResult) {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const before = editContent.slice(0, mentionStartPos);
+    const after = editContent.slice(textarea.selectionStart);
+    const mention = `@${contact.name}`;
+    const newContent = before + mention + ' ' + after;
+
+    setEditContent(newContent);
+    setShowMentionDropdown(false);
+
+    // Save with mention
+    clearTimeout(saveTimerRef.current);
+    if (activeNote) {
+      saveTimerRef.current = setTimeout(() => {
+        update(activeNote.id, { content: newContent });
+      }, 500);
+    }
+
+    // Restore focus and cursor
+    setTimeout(() => {
+      textarea.focus();
+      const pos = before.length + mention.length + 1;
+      textarea.setSelectionRange(pos, pos);
+    }, 0);
+  }
+
+  function handleTextareaKeyDown(e: React.KeyboardEvent) {
+    if (!showMentionDropdown || mentionResults.length === 0) return;
+
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setSelectedMentionIdx((i) => Math.min(i + 1, mentionResults.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setSelectedMentionIdx((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      insertMention(mentionResults[selectedMentionIdx]);
+    } else if (e.key === 'Escape') {
+      setShowMentionDropdown(false);
+    }
+  }
+
   function handleRefresh() {
     if (tab === 'drive') refreshDrive();
     else refresh();
@@ -134,12 +235,61 @@ export function NotesWidget() {
       >
         <div className="flex h-full flex-col p-3">
           <div className="text-xs font-medium text-purple-400/80 mb-2 uppercase tracking-wider">{activeNote.title}</div>
-          <textarea
-            value={editContent}
-            onChange={(e) => handleContentChange(e.target.value)}
-            className="flex-1 resize-none rounded border border-purple-500/15 bg-slate-900/60 p-2.5 text-xs text-gray-300 placeholder-gray-600 focus:border-purple-500/40 focus:outline-none font-mono transition-all"
-            placeholder="Enter intel..."
-          />
+
+          {/* Mentions badges */}
+          {activeNote.mentions && activeNote.mentions.length > 0 && (
+            <div className="flex flex-wrap gap-1 mb-2">
+              {activeNote.mentions.map((m) => (
+                <span
+                  key={m.id}
+                  className="inline-flex items-center rounded-full bg-cyan-500/10 px-2 py-0.5 text-[9px] text-cyan-400 border border-cyan-500/20"
+                >
+                  @{m.name}
+                  {m.company && <span className="ml-1 text-gray-600">{m.company}</span>}
+                </span>
+              ))}
+            </div>
+          )}
+
+          <div className="relative flex-1">
+            <textarea
+              ref={textareaRef}
+              value={editContent}
+              onChange={handleTextareaChange}
+              onKeyDown={handleTextareaKeyDown}
+              onBlur={() => setTimeout(() => setShowMentionDropdown(false), 200)}
+              className="h-full w-full resize-none rounded border border-purple-500/15 bg-slate-900/60 p-2.5 text-xs text-gray-300 placeholder-gray-600 focus:border-purple-500/40 focus:outline-none font-mono transition-all"
+              placeholder="Enter intel... Type @ to mention a contact"
+            />
+
+            {/* @mention autocomplete dropdown */}
+            {showMentionDropdown && mentionResults.length > 0 && (
+              <div className="absolute left-0 right-0 bottom-8 z-50 rounded border border-cyan-500/20 bg-slate-900/95 backdrop-blur shadow-lg shadow-black/50 overflow-hidden">
+                {mentionResults.map((contact, idx) => (
+                  <button
+                    key={contact.id}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      insertMention(contact);
+                    }}
+                    className={`w-full flex items-center gap-2 px-3 py-2 text-left transition-colors ${
+                      idx === selectedMentionIdx
+                        ? 'bg-cyan-500/15 text-cyan-300'
+                        : 'text-gray-400 hover:bg-white/5'
+                    }`}
+                  >
+                    <span className="flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500/20 text-[9px] text-cyan-400 font-bold shrink-0">
+                      {contact.name.charAt(0)}
+                    </span>
+                    <span className="text-xs truncate">{contact.name}</span>
+                    {contact.company && (
+                      <span className="text-[10px] text-gray-600 truncate ml-auto">{contact.company}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
           <div className="mt-1.5 text-right text-[10px] text-gray-700 uppercase tracking-wider">Auto-saving</div>
         </div>
       </WidgetPanel>
@@ -268,9 +418,16 @@ export function NotesWidget() {
                   className="group flex items-center justify-between rounded-lg px-3 py-2 cursor-pointer transition-all hover:bg-white/[0.02] border border-transparent hover:border-purple-500/10"
                 >
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs font-medium text-gray-300 truncate">{note.title}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-medium text-gray-300 truncate">{note.title}</span>
+                      {note.mentions && note.mentions.length > 0 && (
+                        <span className="shrink-0 rounded-full bg-cyan-500/15 px-1.5 py-0 text-[8px] text-cyan-400 border border-cyan-500/20">
+                          @{note.mentions.length}
+                        </span>
+                      )}
+                    </div>
                     <div className="text-[10px] text-gray-600 truncate font-mono">
-                      {note.content.slice(0, 50) || '[ empty ]'}
+                      {note.content ? renderContentPreview(note.content) : '[ empty ]'}
                     </div>
                   </div>
                   <button
@@ -298,4 +455,9 @@ export function NotesWidget() {
       </div>
     </WidgetPanel>
   );
+}
+
+/** Show plain text preview (first 50 chars) */
+function renderContentPreview(content: string) {
+  return content.slice(0, 50);
 }
