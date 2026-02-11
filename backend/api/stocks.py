@@ -1,4 +1,5 @@
 """Stock data endpoints — calls yfinance directly for structured JSON."""
+from concurrent.futures import ThreadPoolExecutor
 from flask import Blueprint, request, jsonify
 import yfinance as yf
 
@@ -46,5 +47,6 @@ def get_stock(ticker):
 def get_watchlist():
     tickers_param = request.args.get("tickers", "AAPL,TSLA,GOOGL")
     tickers = [t.strip() for t in tickers_param.split(",") if t.strip()]
-    results = [_get_stock_data(t) for t in tickers]
+    with ThreadPoolExecutor(max_workers=min(len(tickers), 5)) as pool:
+        results = list(pool.map(_get_stock_data, tickers))
     return jsonify(results)
