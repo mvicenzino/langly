@@ -16,3 +16,5 @@ psycopg2-binary>=2.9
 gunicorn>=21.2
 gevent>=23.9
 gevent-websocket>=0.10
+google-api-python-client>=2.100
+google-auth>=2.23
