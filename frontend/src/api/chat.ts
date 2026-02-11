@@ -1,4 +1,4 @@
-const BASE = '/api/chat';
+import { apiGet, apiPost, apiDelete } from './client';
 
 export interface ChatSession {
   id: number;
@@ -17,28 +17,27 @@ export interface SavedMessage {
 }
 
 export async function fetchSessions(): Promise<ChatSession[]> {
-  const res = await fetch(`${BASE}/sessions`);
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    return await apiGet<ChatSession[]>('/api/chat/sessions');
+  } catch {
+    return [];
+  }
 }
 
 export async function createSession(title?: string): Promise<ChatSession> {
-  const res = await fetch(`${BASE}/sessions`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ title: title || 'New Chat' }),
-  });
-  return res.json();
+  return apiPost<ChatSession>('/api/chat/sessions', { title: title || 'New Chat' });
 }
 
 export async function deleteSession(sessionId: number): Promise<void> {
-  await fetch(`${BASE}/sessions/${sessionId}`, { method: 'DELETE' });
+  await apiDelete<void>(`/api/chat/sessions/${sessionId}`);
 }
 
 export async function fetchMessages(sessionId: number): Promise<SavedMessage[]> {
-  const res = await fetch(`${BASE}/sessions/${sessionId}/messages`);
-  if (!res.ok) return [];
-  return res.json();
+  try {
+    return await apiGet<SavedMessage[]>(`/api/chat/sessions/${sessionId}/messages`);
+  } catch {
+    return [];
+  }
 }
 
 export async function saveMessage(
@@ -48,10 +47,10 @@ export async function saveMessage(
   toolCalls?: unknown[],
   thinkingSteps?: unknown[],
 ): Promise<{ id: number }> {
-  const res = await fetch(`${BASE}/sessions/${sessionId}/messages`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ role, content, toolCalls, thinkingSteps }),
+  return apiPost<{ id: number }>(`/api/chat/sessions/${sessionId}/messages`, {
+    role,
+    content,
+    toolCalls,
+    thinkingSteps,
   });
-  return res.json();
 }

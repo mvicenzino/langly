@@ -12,6 +12,7 @@ import { NotesWidget } from './components/widgets/NotesWidget';
 import { SystemMonitorWidget } from './components/widgets/SystemMonitorWidget';
 import { SystemWidget } from './components/widgets/SystemWidget';
 import { ActivityWidget } from './components/widgets/ActivityWidget';
+import { ContactsWidget } from './components/widgets/ContactsWidget';
 import { commandCategories } from './config/commandCategories';
 
 // Define which widgets appear under which tabs per category
@@ -55,7 +56,7 @@ const categoryTabs: Record<string, { id: string; label: string }[]> = {
   ],
   'career-growth': [
     { id: 'commands', label: 'Career Tools' },
-    { id: 'widgets', label: 'Market Data' },
+    { id: 'widgets', label: 'Network & Market' },
   ],
   'emergency-safety': [
     { id: 'commands', label: 'Emergency Tools' },
@@ -85,8 +86,8 @@ function App() {
 
   const handleRunCommand = useCallback((prompt: string) => {
     setChatOpen(true);
-    // Small delay to ensure chat panel is open
-    setTimeout(() => sendToChat.current?.(prompt), 100);
+    // sendToChat ref is always available since ChatPanel is always mounted
+    setTimeout(() => sendToChat.current?.(prompt), 50);
   }, []);
 
   const handleChatDone = useCallback(() => {
@@ -154,8 +155,8 @@ function App() {
                   <div><StockWidget /></div>
                   <div><TodoWidget /></div>
                   <div><NotesWidget /></div>
+                  <div><ContactsWidget /></div>
                   <div><SystemMonitorWidget /></div>
-                  <div><SystemWidget /></div>
                 </div>
               )}
 
@@ -247,9 +248,10 @@ function App() {
 
               {/* ─── Career Growth ─────────────────────────────── */}
               {activeCategory === 'career-growth' && activeTab === 'widgets' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 auto-rows-[280px]">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-[280px]">
+                  <div><ContactsWidget /></div>
+                  <div><NotesWidget /></div>
                   <div><StockWidget /></div>
-                  <div><SystemMonitorWidget /></div>
                 </div>
               )}
 
@@ -264,13 +266,13 @@ function App() {
             </div>
           </div>
 
-          {/* Chat Panel — always accessible on the right */}
-          {chatOpen && (
-            <div className="w-[380px] xl:w-[420px] shrink-0 border-l border-white/5 flex flex-col"
-                 style={{ background: 'rgba(3, 7, 18, 0.4)' }}>
-              <ChatPanel onChatDone={handleChatDone} onSendRef={sendToChat} />
-            </div>
-          )}
+          {/* Chat Panel — always mounted, hidden when closed */}
+          <div
+            className={`w-[380px] xl:w-[420px] shrink-0 border-l border-white/5 flex flex-col ${chatOpen ? '' : 'hidden'}`}
+            style={{ background: 'rgba(3, 7, 18, 0.4)' }}
+          >
+            <ChatPanel onChatDone={handleChatDone} onSendRef={sendToChat} />
+          </div>
         </div>
       </div>
     </div>
