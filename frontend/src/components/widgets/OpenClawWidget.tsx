@@ -73,7 +73,7 @@ export function OpenClawWidget() {
     >
       <div className="p-3 space-y-3">
         {/* Gateway Status */}
-        {status && (
+        {status && status.configured && (
           <div className="rounded-lg border border-white/5 p-2.5" style={{ background: 'rgba(15, 23, 42, 0.4)' }}>
             <div className="flex items-center justify-between mb-2">
               <span className="text-[10px] uppercase tracking-wider text-rose-400/60 font-mono">Gateway</span>
@@ -157,6 +157,13 @@ export function OpenClawWidget() {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {status && !status.configured && !loading && (
+          <div className="text-center py-6 space-y-1.5">
+            <p className="text-[11px] text-gray-500 uppercase tracking-wider">Not configured</p>
+            <p className="text-[10px] text-gray-600 font-mono">OpenClaw gateway not installed on this host</p>
           </div>
         )}
 

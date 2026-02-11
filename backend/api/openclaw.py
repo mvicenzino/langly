@@ -47,6 +47,20 @@ def openclaw_status():
         except Exception:
             pass
 
+        # If no config file exists, OpenClaw is not installed on this host
+        if not config:
+            return jsonify({
+                "configured": False,
+                "alive": False,
+                "version": "",
+                "model": "",
+                "workspace": "",
+                "maxConcurrent": 0,
+                "channels": [],
+                "gatewayMode": "",
+                "port": GATEWAY_PORT,
+            })
+
         agents_config = config.get("agents", {}).get("defaults", {})
         model_config = agents_config.get("model", {})
         channels_config = config.get("channels", {})
@@ -57,6 +71,7 @@ def openclaw_status():
         ]
 
         return jsonify({
+            "configured": True,
             "alive": gateway_alive,
             "version": config.get("meta", {}).get("lastTouchedVersion", "unknown"),
             "model": model_config.get("primary", "unknown"),

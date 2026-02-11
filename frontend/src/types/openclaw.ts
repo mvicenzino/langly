@@ -1,4 +1,5 @@
 export interface OpenClawStatus {
+  configured: boolean;
   alive: boolean;
   version: string;
   model: string;
