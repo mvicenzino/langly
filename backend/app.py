@@ -3,7 +3,9 @@ from flask import Flask
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
-socketio = SocketIO(cors_allowed_origins="*", async_mode="threading")
+import os
+_async_mode = "gevent" if os.getenv("RAILWAY_ENVIRONMENT") else "threading"
+socketio = SocketIO(cors_allowed_origins="*", async_mode=_async_mode)
 
 
 def create_app():

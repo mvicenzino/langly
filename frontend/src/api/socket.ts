@@ -1,7 +1,8 @@
 import { io, Socket } from 'socket.io-client';
 
-// Use empty URL so Socket.IO connects to the same origin (Vite proxy handles /socket.io → backend)
-const URL = '';
+// In dev, Vite proxy handles /socket.io → localhost:5001 (empty URL = same origin)
+// In prod, VITE_API_URL points to the Railway backend
+const URL = import.meta.env.VITE_API_URL || '';
 
 export const socket: Socket = io(URL, {
   autoConnect: false,

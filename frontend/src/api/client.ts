@@ -1,4 +1,6 @@
-const BASE_URL = import.meta.env.DEV ? 'http://localhost:5001' : '';
+// In dev, Vite proxy handles /api → localhost:5001
+// In prod, VITE_API_URL points to the Railway backend
+const BASE_URL = import.meta.env.VITE_API_URL || '';
 
 export async function apiGet<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE_URL}${path}`);

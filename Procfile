@@ -1,0 +1,1 @@
+web: cd /app && python -c "from backend.db import init_tables; init_tables()" && gunicorn --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker --workers 1 --bind 0.0.0.0:$PORT backend.run:app

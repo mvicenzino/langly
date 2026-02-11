@@ -1,13 +1,22 @@
 """
 Wraps the existing langchain_agent module.
-Adds its directory to sys.path so we can import it directly.
+In production (Railway), uses the bundled copy in backend/agent/.
+Locally, imports from LANGCHAIN_AGENT_PATH.
 """
 import sys
-from backend.config import LANGCHAIN_AGENT_PATH
+import os
+from pathlib import Path
 
-# Make langchain_agent importable
-if LANGCHAIN_AGENT_PATH not in sys.path:
-    sys.path.insert(0, LANGCHAIN_AGENT_PATH)
+# Try bundled agent first, then external path
+bundled = str(Path(__file__).parent)
+if bundled not in sys.path:
+    sys.path.insert(0, bundled)
+
+# If LANGCHAIN_AGENT_PATH is set and exists, prefer it (local dev)
+agent_path = os.getenv("LANGCHAIN_AGENT_PATH", "")
+if agent_path and os.path.isdir(agent_path):
+    if agent_path not in sys.path:
+        sys.path.insert(0, agent_path)
 
 import langchain_agent  # noqa: E402
 

@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Entry point for the Langly backend."""
 
-# Fix broken kqueue selector on macOS system Python 3.9
-import selectors
-selectors.DefaultSelector = selectors.SelectSelector
-
+import platform
 import sys
 from pathlib import Path
+
+# Fix broken kqueue selector on macOS system Python 3.9
+if platform.system() == "Darwin":
+    import selectors
+    selectors.DefaultSelector = selectors.SelectSelector
 
 # Ensure project root is on path for imports
 project_root = str(Path(__file__).parent.parent)
@@ -17,6 +19,14 @@ import os
 from backend.app import create_app, socketio
 
 app = create_app()
+
+# Auto-create tables on startup
+try:
+    from backend.db import init_tables
+    init_tables()
+    print("Database tables verified.")
+except Exception as e:
+    print(f"Warning: Could not init tables: {e}")
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5001))
