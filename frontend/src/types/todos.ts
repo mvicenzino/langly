@@ -1,7 +1,8 @@
 export interface Todo {
-  id: number;
+  id: string;
   task: string;
   done: boolean;
-  created_at: string;
-  updated_at: string;
+  due: string;
+  priority: number;
+  notes: string;
 }

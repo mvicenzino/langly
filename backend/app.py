@@ -26,6 +26,7 @@ def create_app():
     from backend.api.skills import skills_bp
     from backend.api.activity import activity_bp
     from backend.api.drive import drive_bp
+    from backend.api.reminders import reminders_bp
 
     app.register_blueprint(health_bp)
     app.register_blueprint(chat_bp)
@@ -38,6 +39,7 @@ def create_app():
     app.register_blueprint(skills_bp)
     app.register_blueprint(activity_bp)
     app.register_blueprint(drive_bp)
+    app.register_blueprint(reminders_bp)
 
     # Register socket handlers
     from backend.sockets.chat_handler import register_handlers

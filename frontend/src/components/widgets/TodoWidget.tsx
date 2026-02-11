@@ -62,7 +62,7 @@ export function TodoWidget() {
               className="group flex items-center gap-2.5 rounded-lg px-2.5 py-2 transition-all hover:bg-white/[0.02]"
             >
               <button
-                onClick={() => toggle(todo.id, !todo.done)}
+                onClick={() => toggle(String(todo.id), !todo.done)}
                 className={`flex h-4 w-4 shrink-0 items-center justify-center rounded transition-all ${
                   todo.done
                     ? 'border border-emerald-500/50 bg-emerald-500/15 text-emerald-400'
@@ -83,7 +83,7 @@ export function TodoWidget() {
                 {todo.task}
               </span>
               <button
-                onClick={() => remove(todo.id)}
+                onClick={() => remove(String(todo.id))}
                 className="invisible text-gray-700 hover:text-red-400 group-hover:visible transition-colors"
               >
                 <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

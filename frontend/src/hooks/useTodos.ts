@@ -29,12 +29,12 @@ export function useTodos() {
     await refresh();
   }, [refresh]);
 
-  const toggle = useCallback(async (id: number, done: boolean) => {
+  const toggle = useCallback(async (id: string, done: boolean) => {
     await todosApi.updateTodo(id, { done });
     await refresh();
   }, [refresh]);
 
-  const remove = useCallback(async (id: number) => {
+  const remove = useCallback(async (id: string) => {
     await todosApi.deleteTodo(id);
     await refresh();
   }, [refresh]);
