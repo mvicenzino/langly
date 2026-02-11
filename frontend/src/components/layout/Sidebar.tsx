@@ -1,6 +1,7 @@
+import type { ReactElement } from 'react';
 import { commandCategories } from '../../config/commandCategories';
 
-const iconMap: Record<string, (active: boolean) => JSX.Element> = {
+const iconMap: Record<string, (active: boolean) => ReactElement> = {
   dashboard: (a) => (
     <svg className={`h-5 w-5 ${a ? 'text-cyan-400' : 'text-gray-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 5a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm10 0a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1h-4a1 1 0 01-1-1V5zm0 6a1 1 0 011-1h4a1 1 0 011 1v5a1 1 0 01-1 1h-4a1 1 0 01-1-1v-5zM4 13a1 1 0 011-1h4a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1v-2z" />
