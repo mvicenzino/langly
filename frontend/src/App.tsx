@@ -9,7 +9,7 @@ import { StockWidget } from './components/widgets/StockWidget';
 import { WeatherWidget } from './components/widgets/WeatherWidget';
 import { TodoWidget } from './components/widgets/TodoWidget';
 import { NotesWidget } from './components/widgets/NotesWidget';
-import { OpenClawWidget } from './components/widgets/OpenClawWidget';
+import { SystemMonitorWidget } from './components/widgets/SystemMonitorWidget';
 import { SystemWidget } from './components/widgets/SystemWidget';
 import { ActivityWidget } from './components/widgets/ActivityWidget';
 import { commandCategories } from './config/commandCategories';
@@ -154,7 +154,7 @@ function App() {
                   <div><StockWidget /></div>
                   <div><TodoWidget /></div>
                   <div><NotesWidget /></div>
-                  <div><OpenClawWidget /></div>
+                  <div><SystemMonitorWidget /></div>
                   <div><SystemWidget /></div>
                 </div>
               )}
@@ -169,7 +169,7 @@ function App() {
               {activeCategory === 'dashboard' && activeTab === 'monitoring' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 auto-rows-[320px]">
                   <div><SystemWidget /></div>
-                  <div><OpenClawWidget /></div>
+                  <div><SystemMonitorWidget /></div>
                 </div>
               )}
 
@@ -249,7 +249,7 @@ function App() {
               {activeCategory === 'career-growth' && activeTab === 'widgets' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 auto-rows-[280px]">
                   <div><StockWidget /></div>
-                  <div><OpenClawWidget /></div>
+                  <div><SystemMonitorWidget /></div>
                 </div>
               )}
 
