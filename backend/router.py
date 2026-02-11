@@ -232,13 +232,13 @@ def execute_fast(route_info: dict) -> dict:
 def _handle_greeting():
     hour = datetime.now().hour
     if hour < 12:
-        greeting = "Good morning!"
+        greeting = "Good morning, Michael!"
     elif hour < 17:
-        greeting = "Good afternoon!"
+        greeting = "Good afternoon, Michael!"
     else:
-        greeting = "Good evening!"
+        greeting = "Good evening, Michael!"
     return {
-        "response": f"{greeting} How can I help you today?",
+        "response": f"{greeting} How can I help you and the family today?",
         "tool": None,
         "data": {},
     }

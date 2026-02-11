@@ -715,9 +715,16 @@ tools = [
 # Set up the LLM
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 
+# Load family profile for personalized responses
+try:
+    from backend.profile import FAMILY_PROFILE
+except ImportError:
+    FAMILY_PROFILE = ""
+
 # ReAct prompt template
+_profile_block = f"\n{FAMILY_PROFILE}\n\n" if FAMILY_PROFILE else ""
 prompt = PromptTemplate.from_template(
-    """Answer the following questions as best you can. You have access to the following tools:
+    _profile_block + """Answer the following questions as best you can. You have access to the following tools:
 
 {tools}
 
