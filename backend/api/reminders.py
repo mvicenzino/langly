@@ -86,10 +86,12 @@ def _parse_todo(obj) -> dict | None:
 @reminders_bp.route("/api/reminders")
 def list_reminders():
     """List all reminders from Apple Reminders."""
-    cal = _get_list()
-    if not cal:
+    if not APPLE_ID or not APPLE_APP_PASSWORD:
         return jsonify({"configured": False, "items": []})
     try:
+        cal = _get_list()
+        if not cal:
+            return jsonify({"configured": False, "items": []})
         items = []
         for obj in cal.objects():
             parsed = _parse_todo(obj)
@@ -99,6 +101,8 @@ def list_reminders():
         items.sort(key=lambda x: (x["done"], -x["priority"]))
         return jsonify({"configured": True, "items": items})
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return jsonify({"configured": True, "items": [], "error": str(e)}), 500
 
 
