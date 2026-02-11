@@ -11,8 +11,15 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
-from langchain.agents import AgentExecutor, create_react_agent
-from langchain.tools import Tool
+try:
+    from langchain.agents import AgentExecutor, create_react_agent
+except ImportError:
+    from langchain.agents.agent import AgentExecutor
+    from langchain.agents.react.agent import create_react_agent
+try:
+    from langchain.tools import Tool
+except ImportError:
+    from langchain_core.tools import Tool
 from langchain_core.prompts import PromptTemplate
 from serpapi import GoogleSearch
 import requests
