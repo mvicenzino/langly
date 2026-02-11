@@ -43,7 +43,7 @@ export function ChatPanel({ onChatDone, onSendRef }: Props) {
 
   return (
     <WidgetPanel
-      title="Neural Link"
+      title="Ask Langly"
       accentColor="cyan"
       icon={
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

@@ -6,14 +6,14 @@ interface Props {
 
 export function Header({ chatOpen, onToggleChat, onOpenSettings }: Props) {
   return (
-    <header className="relative z-20 flex items-center justify-between border-b border-cyan-500/10 px-5 py-2.5"
+    <header className="relative z-20 flex items-center justify-between border-b border-cyan-500/10 px-5 py-3"
             style={{ background: 'rgba(3, 7, 18, 0.8)', backdropFilter: 'blur(12px)' }}>
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-4">
         {/* Logo mark */}
-        <div className="relative flex h-8 w-8 items-center justify-center">
-          <div className="absolute inset-0 rounded-lg bg-cyan-500/20 blur-sm" />
-          <div className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-cyan-500/30 bg-cyan-950/80">
-            <svg className="h-4 w-4 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <div className="relative flex h-10 w-10 items-center justify-center">
+          <div className="absolute inset-0 rounded-xl bg-cyan-500/20 blur-sm" />
+          <div className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-950/80">
+            <svg className="h-5 w-5 text-cyan-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
             </svg>
           </div>
@@ -22,33 +22,27 @@ export function Header({ chatOpen, onToggleChat, onOpenSettings }: Props) {
         {/* Brand */}
         <div>
           <div className="flex items-baseline gap-0">
-            <h1 className="text-base font-bold tracking-tight text-white glow-text-cyan">langly</h1>
-            <span className="text-base font-light text-cyan-400">.chat</span>
+            <h1 className="text-xl font-bold tracking-tight text-white glow-text-cyan">langly</h1>
+            <span className="text-xl font-light text-cyan-400">.chat</span>
           </div>
-          <div className="text-[7px] font-mono uppercase tracking-[0.2em] text-gray-600 -mt-0.5">
+          <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500 -mt-0.5">
             Your Personal Central Intelligence Agent
           </div>
         </div>
 
-        {/* Status badges */}
+        {/* Status badge */}
         <div className="hidden md:flex items-center gap-2 ml-2">
-          <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-2 py-0.5">
+          <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-2.5 py-0.5">
             <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 pulse-ring" />
             <span className="text-[9px] font-medium uppercase tracking-widest text-emerald-400">
               28 agents
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 rounded-full border border-rose-500/20 bg-rose-500/5 px-2 py-0.5">
-            <div className="h-1.5 w-1.5 rounded-full bg-rose-400 pulse-ring" />
-            <span className="text-[9px] font-medium uppercase tracking-widest text-rose-400">
-              OpenClaw
             </span>
           </div>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
-        <span className="hidden lg:inline text-[9px] font-mono text-gray-600 uppercase tracking-wider">
+        <span className="hidden lg:inline text-[10px] font-mono text-gray-500 uppercase tracking-wider">
           {new Date().toLocaleDateString('en', { weekday: 'short', month: 'short', day: 'numeric' })}
           {' '}
           {new Date().toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}
@@ -68,7 +62,7 @@ export function Header({ chatOpen, onToggleChat, onOpenSettings }: Props) {
         {/* Chat toggle */}
         <button
           onClick={onToggleChat}
-          className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[10px] uppercase tracking-wider transition-all ${
+          className={`flex items-center gap-1.5 rounded-md border px-3 py-1.5 text-[11px] uppercase tracking-wider font-medium transition-all ${
             chatOpen
               ? 'border-cyan-500/20 text-cyan-400 bg-cyan-500/5'
               : 'border-white/5 text-gray-500 hover:border-cyan-500/20 hover:text-cyan-400'
@@ -77,7 +71,7 @@ export function Header({ chatOpen, onToggleChat, onOpenSettings }: Props) {
           <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
           </svg>
-          Neural Link
+          Ask Langly
         </button>
       </div>
 
