@@ -9,7 +9,13 @@ socketio = SocketIO(cors_allowed_origins="*", async_mode=_async_mode)
 
 
 def create_app():
-    app = Flask(__name__, static_folder="../frontend/dist", static_url_path="/")
+    # On Railway, no frontend/dist exists — disable static file serving to
+    # prevent Flask's catch-all /<path:filename> from hijacking API routes
+    _dist = os.path.join(os.path.dirname(__file__), "..", "frontend", "dist")
+    if os.path.isdir(_dist):
+        app = Flask(__name__, static_folder=_dist, static_url_path="/static-assets")
+    else:
+        app = Flask(__name__, static_folder=None)
     app.config["SECRET_KEY"] = "dev-secret-key"
 
     CORS(app, resources={r"/api/*": {"origins": "*"}})
