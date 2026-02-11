@@ -6,7 +6,7 @@ interface Props {
 
 export function Header({ chatOpen, onToggleChat, onOpenSettings }: Props) {
   return (
-    <header className="relative z-20 flex items-center justify-between border-b border-cyan-500/10 px-5 py-3"
+    <header className="relative z-20 flex items-center justify-between border-b border-cyan-500/10 px-6 py-4"
             style={{ background: 'rgba(3, 7, 18, 0.8)', backdropFilter: 'blur(12px)' }}>
       <div className="flex items-center gap-4">
         {/* Logo mark */}
@@ -25,7 +25,7 @@ export function Header({ chatOpen, onToggleChat, onOpenSettings }: Props) {
             <h1 className="text-xl font-bold tracking-tight text-white glow-text-cyan">langly</h1>
             <span className="text-xl font-light text-cyan-400">.chat</span>
           </div>
-          <div className="text-[9px] font-mono uppercase tracking-[0.2em] text-gray-500 -mt-0.5">
+          <div className="text-[9px] font-mono uppercase tracking-[0.25em] text-gray-500 mt-1">
             Your Personal Central Intelligence Agent
           </div>
         </div>
