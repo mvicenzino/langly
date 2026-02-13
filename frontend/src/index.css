@@ -246,12 +246,80 @@ body {
 /* ============================================
    Markdown content
    ============================================ */
-.markdown-content h1 { font-size: 1.5rem; font-weight: 700; margin: 0.5rem 0; color: #f1f5f9; }
-.markdown-content h2 { font-size: 1.25rem; font-weight: 600; margin: 0.5rem 0; color: #e2e8f0; }
-.markdown-content h3 { font-size: 1.1rem; font-weight: 600; margin: 0.25rem 0; color: #cbd5e1; }
-.markdown-content p { margin: 0.25rem 0; }
-.markdown-content ul { list-style: disc; margin-left: 1.25rem; }
-.markdown-content ol { list-style: decimal; margin-left: 1.25rem; }
+.markdown-content {
+  line-height: 1.7;
+}
+.markdown-content h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 1.25rem 0 0.75rem;
+  color: #f1f5f9;
+  letter-spacing: -0.01em;
+}
+.markdown-content h2 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 1.5rem 0 0.5rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid rgba(56, 189, 248, 0.1);
+  color: #e2e8f0;
+}
+.markdown-content h2:first-child { margin-top: 0; }
+.markdown-content h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 1.25rem 0 0.4rem;
+  color: var(--glow-cyan);
+  letter-spacing: 0.02em;
+}
+.markdown-content p {
+  margin: 0.5rem 0;
+  color: #cbd5e1;
+}
+.markdown-content ul {
+  list-style: none;
+  margin-left: 0;
+  padding-left: 0;
+}
+.markdown-content ul > li {
+  position: relative;
+  padding: 0.5rem 0 0.5rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+.markdown-content ul > li:last-child { border-bottom: none; }
+.markdown-content ul > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 1rem;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--glow-cyan);
+  opacity: 0.5;
+}
+.markdown-content ol {
+  list-style: decimal;
+  margin-left: 1.25rem;
+  padding-left: 0;
+}
+.markdown-content ol > li {
+  padding: 0.35rem 0;
+}
+.markdown-content strong {
+  color: #f1f5f9;
+  font-weight: 600;
+}
+.markdown-content em {
+  color: #94a3b8;
+  font-style: italic;
+}
+.markdown-content hr {
+  border: none;
+  height: 1px;
+  background: rgba(56, 189, 248, 0.1);
+  margin: 1.25rem 0;
+}
 .markdown-content code {
   background: rgba(30, 41, 59, 0.8);
   border: 1px solid rgba(56, 189, 248, 0.1);
@@ -266,7 +334,7 @@ body {
   padding: 0.75rem;
   border-radius: 0.5rem;
   overflow-x: auto;
-  margin: 0.5rem 0;
+  margin: 0.75rem 0;
 }
 .markdown-content pre code {
   background: none;
@@ -277,20 +345,29 @@ body {
 .markdown-content a {
   color: var(--glow-cyan);
   text-decoration: none;
-  border-bottom: 1px solid rgba(34, 211, 238, 0.3);
-  transition: border-color 0.2s;
+  border-bottom: 1px solid rgba(34, 211, 238, 0.2);
+  transition: border-color 0.2s, opacity 0.2s;
 }
 .markdown-content a:hover {
   border-color: var(--glow-cyan);
+  opacity: 0.9;
+}
+.markdown-content blockquote {
+  border-left: 3px solid rgba(34, 211, 238, 0.3);
+  padding: 0.5rem 1rem;
+  margin: 0.75rem 0;
+  background: rgba(15, 23, 42, 0.4);
+  border-radius: 0 0.375rem 0.375rem 0;
+  color: #94a3b8;
 }
 .markdown-content table {
   border-collapse: collapse;
   width: 100%;
-  margin: 0.5rem 0;
+  margin: 0.75rem 0;
 }
 .markdown-content th, .markdown-content td {
   border: 1px solid rgba(56, 189, 248, 0.1);
-  padding: 0.375rem 0.75rem;
+  padding: 0.5rem 0.75rem;
   text-align: left;
 }
 .markdown-content th {
@@ -305,6 +382,21 @@ body {
 /* ============================================
    Accent line on top of panels
    ============================================ */
+/* ============================================
+   Shake animation (login error)
+   ============================================ */
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-8px); }
+  40% { transform: translateX(8px); }
+  60% { transform: translateX(-4px); }
+  80% { transform: translateX(4px); }
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-in-out;
+}
+
 .accent-line-top {
   position: relative;
 }

@@ -2,6 +2,7 @@
 import queue
 import time
 import threading
+from flask import request as flask_request
 from flask_socketio import SocketIO, emit
 from backend.agent.callbacks import StreamingCallbackHandler
 from backend.router import classify, execute_fast
@@ -9,8 +10,18 @@ from backend.router import classify, execute_fast
 
 def register_handlers(socketio: SocketIO):
 
+    @socketio.on("connect")
+    def handle_connect():
+        from backend.api.auth import is_token_valid
+        token = flask_request.args.get("token")
+        if not is_token_valid(token):
+            print("[SOCKET] Client rejected — invalid token", flush=True)
+            return False  # reject connection
+        print("[SOCKET] Client connected", flush=True)
+
     @socketio.on("chat:send")
     def handle_chat(data):
+        print(f"[SOCKET] chat:send received: {str(data)[:100]}", flush=True)
         user_message = data.get("message", "")
         if not user_message:
             emit("chat:error", {"error": "No message provided"})
@@ -18,9 +29,11 @@ def register_handlers(socketio: SocketIO):
 
         # ── Fast path: check if we can skip the agent ────────────────
         route_info = classify(user_message)
+        print(f"[SOCKET] classify result: {route_info}", flush=True)
         if route_info:
             try:
                 result = execute_fast(route_info)
+                print(f"[SOCKET] fast-path result: sections in response = {result['response'].count('###')}, len = {len(result['response'])}", flush=True)
                 tool_calls = []
                 if result.get("tool"):
                     tool_calls = [{"tool": result["tool"], "input": user_message, "output": result["response"]}]
@@ -44,23 +57,34 @@ def register_handlers(socketio: SocketIO):
                 except Exception:
                     pass
                 return
-            except Exception:
+            except Exception as e:
+                print(f"[SOCKET] fast-path ERROR: {e}", flush=True)
+                import traceback; traceback.print_exc()
                 # If fast path fails, fall through to full agent
                 pass
 
         # ── Full agent path ──────────────────────────────────────────
+        print("[SOCKET] Entering full agent path", flush=True)
         from backend.agent.wrapper import get_executor
 
         callback = StreamingCallbackHandler()
-        executor = get_executor()
+        try:
+            executor = get_executor()
+            print(f"[SOCKET] Got executor: {type(executor).__name__}", flush=True)
+        except Exception as e:
+            print(f"[SOCKET] ERROR getting executor: {e}", flush=True)
+            emit("chat:error", {"error": f"Agent initialization failed: {e}"})
+            return
         executor.handle_parsing_errors = True
 
         def run_agent():
             try:
+                print("[SOCKET] Agent thread starting invoke...", flush=True)
                 result = executor.invoke(
                     {"input": user_message},
                     config={"callbacks": [callback]}
                 )
+                print(f"[SOCKET] Agent invoke returned: {str(result)[:200]}", flush=True)
                 if not callback.is_done:
                     output = result.get("output", "") if isinstance(result, dict) else str(result)
                     callback.queue.put({
@@ -69,6 +93,7 @@ def register_handlers(socketio: SocketIO):
                     })
                     callback._done = True
             except Exception as e:
+                print(f"[SOCKET] Agent thread ERROR: {e}", flush=True)
                 callback.queue.put({
                     "event": "error",
                     "data": str(e)

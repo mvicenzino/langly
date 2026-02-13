@@ -1,8 +1,12 @@
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
+import { useAuthStore } from './store/authStore';
+import { LoginScreen } from './components/LoginScreen';
 import { Header } from './components/layout/Header';
 import { Sidebar } from './components/layout/Sidebar';
 import { TabBar } from './components/layout/TabBar';
 import { CommandGrid } from './components/layout/CommandGrid';
+import { SkillsPanel } from './components/layout/SkillsPanel';
+import { MainContentPanel } from './components/layout/MainContentPanel';
 import { SettingsPanel } from './components/layout/SettingsPanel';
 import { ChatPanel } from './components/chat/ChatPanel';
 import { StockWidget } from './components/widgets/StockWidget';
@@ -13,7 +17,14 @@ import { SystemMonitorWidget } from './components/widgets/SystemMonitorWidget';
 import { SystemWidget } from './components/widgets/SystemWidget';
 import { ActivityWidget } from './components/widgets/ActivityWidget';
 import { ContactsWidget } from './components/widgets/ContactsWidget';
+import { NetWorthWidget } from './components/widgets/NetWorthWidget';
+import { TransactionsWidget } from './components/widgets/TransactionsWidget';
+import { BudgetWidget } from './components/widgets/BudgetWidget';
+import { NetWorthTrendWidget } from './components/widgets/NetWorthTrendWidget';
+import { SpendingWidget } from './components/widgets/SpendingWidget';
+import { CashflowWidget } from './components/widgets/CashflowWidget';
 import { commandCategories } from './config/commandCategories';
+import { useChat } from './hooks/useChat';
 
 // Define which widgets appear under which tabs per category
 const categoryTabs: Record<string, { id: string; label: string }[]> = {
@@ -27,6 +38,7 @@ const categoryTabs: Record<string, { id: string; label: string }[]> = {
     { id: 'widgets', label: 'Feeds' },
   ],
   'personal-finance': [
+    { id: 'finances', label: 'My Finances' },
     { id: 'commands', label: 'Finance Tools' },
     { id: 'widgets', label: 'Markets' },
   ],
@@ -62,6 +74,9 @@ const categoryTabs: Record<string, { id: string; label: string }[]> = {
     { id: 'commands', label: 'Emergency Tools' },
     { id: 'widgets', label: 'Status' },
   ],
+  'claude-skills': [
+    { id: 'skills', label: 'My Skills' },
+  ],
 };
 
 // Default tabs for categories that don't have specific ones
@@ -70,29 +85,57 @@ const defaultTabs = [
 ];
 
 function App() {
+  const token = useAuthStore((s) => s.token);
+  const verify = useAuthStore((s) => s.verify);
+  const [authChecked, setAuthChecked] = useState(false);
+
+  useEffect(() => {
+    if (token) {
+      verify().finally(() => setAuthChecked(true));
+    } else {
+      setAuthChecked(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!authChecked) return null;
+  if (!token) return <LoginScreen />;
+  return <Dashboard />;
+}
+
+function Dashboard() {
   const [activeCategory, setActiveCategory] = useState('dashboard');
   const [activeTab, setActiveTab] = useState('overview');
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const sendToChat = useRef<((msg: string) => void) | null>(null);
+  const [showMainContent, setShowMainContent] = useState(false);
+  const [commandTitle, setCommandTitle] = useState('');
+
+  // Lift useChat to App level so both panels share state
+  const chat = useChat();
 
   const handleSelectCategory = useCallback((id: string) => {
     setActiveCategory(id);
+    setShowMainContent(false);
     // Set first tab as active
     const tabs = categoryTabs[id] || defaultTabs;
     setActiveTab(tabs[0].id);
   }, []);
 
-  const handleRunCommand = useCallback((prompt: string) => {
-    setChatOpen(true);
-    // sendToChat ref is always available since ChatPanel is always mounted
-    setTimeout(() => sendToChat.current?.(prompt), 50);
+  const handleRunCommand = useCallback((prompt: string, name: string) => {
+    setShowMainContent(true);
+    setCommandTitle(name);
+    chat.sendMessage(prompt);
+  }, [chat.sendMessage]);
+
+  const handleBack = useCallback(() => {
+    setShowMainContent(false);
   }, []);
 
-  const handleChatDone = useCallback(() => {
-    // Could refresh widgets here
-  }, []);
+  const handleLaunchSkill = useCallback((prompt: string) => {
+    setChatOpen(true);
+    chat.sendMessage(prompt);
+  }, [chat.sendMessage]);
 
   // Global keyboard shortcuts
   useEffect(() => {
@@ -113,7 +156,7 @@ function App() {
 
   const tabs = categoryTabs[activeCategory] || defaultTabs;
   const category = commandCategories.find((c) => c.id === activeCategory);
-  const accentColor = category?.color || 'cyan';
+  const accentColor = activeCategory === 'claude-skills' ? 'orange' : (category?.color || 'cyan');
 
   return (
     <div className="relative flex h-screen flex-col bg-grid scan-line overflow-hidden"
@@ -174,9 +217,26 @@ function App() {
                 </div>
               )}
 
-              {/* ─── Category Command Grids ─────────────────────── */}
-              {activeCategory !== 'dashboard' && activeTab === 'commands' && (
-                <CommandGrid categoryId={activeCategory} onRunCommand={handleRunCommand} />
+              {/* ─── Claude Skills ────────────────────────────── */}
+              {activeCategory === 'claude-skills' && activeTab === 'skills' && (
+                <SkillsPanel onLaunchSkill={handleLaunchSkill} />
+              )}
+
+              {/* ─── Category Command Grids / Main Content Panel ── */}
+              {activeCategory !== 'dashboard' && activeCategory !== 'claude-skills' && activeTab === 'commands' && (
+                showMainContent ? (
+                  <div className="rounded-xl border border-white/5 overflow-hidden"
+                       style={{ background: 'rgba(3, 7, 18, 0.6)' }}>
+                    <MainContentPanel
+                      messages={chat.messages}
+                      isLoading={chat.isLoading}
+                      commandTitle={commandTitle}
+                      onBack={handleBack}
+                    />
+                  </div>
+                ) : (
+                  <CommandGrid categoryId={activeCategory} onRunCommand={handleRunCommand} />
+                )
               )}
 
               {/* ─── Daily Briefs ──────────────────────────────── */}
@@ -189,6 +249,17 @@ function App() {
               )}
 
               {/* ─── Personal Finance ──────────────────────────── */}
+              {activeCategory === 'personal-finance' && activeTab === 'finances' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-[320px]">
+                  <div><NetWorthWidget /></div>
+                  <div><NetWorthTrendWidget /></div>
+                  <div><CashflowWidget /></div>
+                  <div><SpendingWidget /></div>
+                  <div><TransactionsWidget /></div>
+                  <div><BudgetWidget /></div>
+                </div>
+              )}
+
               {activeCategory === 'personal-finance' && activeTab === 'widgets' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 auto-rows-[320px]">
                   <div><StockWidget /></div>
@@ -271,7 +342,17 @@ function App() {
             className={`w-[380px] xl:w-[420px] shrink-0 border-l border-white/5 flex flex-col ${chatOpen ? '' : 'hidden'}`}
             style={{ background: 'rgba(3, 7, 18, 0.4)' }}
           >
-            <ChatPanel onChatDone={handleChatDone} onSendRef={sendToChat} />
+            <ChatPanel
+              messages={chat.messages}
+              isLoading={chat.isLoading}
+              sendMessage={chat.sendMessage}
+              clearMessages={chat.clearMessages}
+              sessions={chat.sessions}
+              activeSessionId={chat.activeSessionId}
+              startNewSession={chat.startNewSession}
+              switchSession={chat.switchSession}
+              deleteSession={chat.deleteSession}
+            />
           </div>
         </div>
       </div>

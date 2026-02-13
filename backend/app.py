@@ -1,5 +1,5 @@
 """Flask application factory with CORS and SocketIO."""
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 from flask_cors import CORS
 from flask_socketio import SocketIO
 
@@ -16,6 +16,7 @@ def create_app():
     CORS(app, resources={r"/api/*": {"origins": "*"}})
 
     # Register blueprints
+    from backend.api.auth import auth_bp
     from backend.api.health import health_bp
     from backend.api.chat import chat_bp
     from backend.api.stocks import stocks_bp
@@ -29,7 +30,9 @@ def create_app():
     from backend.api.drive import drive_bp
     from backend.api.reminders import reminders_bp
     from backend.api.contacts import contacts_bp
+    from backend.api.finance import finance_bp
 
+    app.register_blueprint(auth_bp)
     app.register_blueprint(health_bp)
     app.register_blueprint(chat_bp)
     app.register_blueprint(stocks_bp)
@@ -43,10 +46,29 @@ def create_app():
     app.register_blueprint(drive_bp)
     app.register_blueprint(reminders_bp)
     app.register_blueprint(contacts_bp)
+    app.register_blueprint(finance_bp)
 
     # Register socket handlers
     from backend.sockets.chat_handler import register_handlers
     register_handlers(socketio)
+
+    # ── Auth middleware ──────────────────────────────────────────
+    @app.before_request
+    def require_auth():
+        # Skip auth for non-API routes, login endpoint, health, and CORS preflight
+        path = request.path
+        if request.method == "OPTIONS":
+            return None
+        if path == "/" or path.startswith("/api/auth/"):
+            return None
+        if not path.startswith("/api/"):
+            return None
+
+        from backend.api.auth import is_token_valid
+        auth_header = request.headers.get("Authorization", "")
+        token = auth_header[7:] if auth_header.startswith("Bearer ") else None
+        if not is_token_valid(token):
+            return jsonify({"error": "Unauthorized"}), 401
 
     @app.route("/")
     def index():
