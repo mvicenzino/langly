@@ -27,8 +27,22 @@ export const commandCategories: CommandCategory[] = [
     ],
   },
   {
+    id: 'career-growth',
+    name: 'Job Agent',
+    icon: 'briefcase',
+    color: 'cyan',
+    commands: [
+      { id: 'job-brief', name: 'Job Search Brief', prompt: 'Daily job search brief. Search for fresh postings matching: VP/Director/Head of Product, Analytics, Data & AI, CPO, CDO. Remote preferred, NYC hybrid OK, NJ area. $200K+ base. Exclude pure PM/Scrum roles. Leverage my background: Snowflake, SiriusXM, Credit Suisse, Aetna. Show top 5 with links and a quick fit assessment for each.' },
+      { id: 'resume-optimize', name: 'Resume Optimizer', prompt: 'Help me optimize my resume for a specific role. I\'ll paste the job description. Score my fit (0-100), analyze keyword gaps, suggest STAR-method bullet improvements. Leverage my strengths: AI/data strategy at Snowflake, CX analytics, enterprise product, building multidisciplinary teams. Optimize for ATS. Be direct about gaps too.' },
+      { id: 'interview-prep', name: 'Interview Prep', prompt: 'Help me prepare for an interview. Ask me: company, role, format (behavioral, technical, case study, panel). Generate likely questions tailored to my level (VP/Director). Help me craft answers using my Snowflake/SiriusXM/Credit Suisse stories. Include strategic questions I should ask them. Focus on demonstrating AI strategy + product thinking + analytics leadership.' },
+      { id: 'linkedin-content', name: 'LinkedIn Content', prompt: 'Help me create a LinkedIn post or article. I\'m building thought leadership at the intersection of AI strategy, product thinking, and analytics. My brand is "Stride" — focused on AI adoption, career transitions, and strategic thinking. Suggest 3 post ideas based on what\'s trending in AI/data this week, then help me draft the best one. Tone: professional, grounded, strategic. No buzzword fluff.' },
+      { id: 'networking-outreach', name: 'Networking Outreach', prompt: 'Help me with networking outreach this week. I need to reach out to people at target companies in data/AI/product leadership roles. Help me craft personalized messages — not generic templates. Ask me who I want to reach out to or suggest types of people based on my target roles. I want to build genuine connections, not blast InMails.' },
+      { id: 'salary-research', name: 'Salary Research', prompt: 'Research salary ranges for a specific role. I\'m targeting VP/Director/Head of Data & AI, Product, or Analytics. 20+ years experience. NYC metro / remote. Search Glassdoor, Levels.fyi, Blind for current data. Give me: base range, total comp, equity, and negotiation leverage points given my Snowflake/enterprise background.' },
+    ],
+  },
+  {
     id: 'personal-finance',
-    name: 'Personal Finance',
+    name: 'Financial Agent',
     icon: 'dollar',
     color: 'emerald',
     commands: [
@@ -42,7 +56,7 @@ export const commandCategories: CommandCategory[] = [
   },
   {
     id: 'family-calendar',
-    name: 'Family Calendar',
+    name: 'Family Planning Agent',
     icon: 'calendar',
     color: 'blue',
     commands: [
@@ -56,7 +70,7 @@ export const commandCategories: CommandCategory[] = [
   },
   {
     id: 'health-wellness',
-    name: 'Health & Wellness',
+    name: 'Health & Wellness Agent',
     icon: 'heart',
     color: 'rose',
     commands: [
@@ -68,22 +82,8 @@ export const commandCategories: CommandCategory[] = [
     ],
   },
   {
-    id: 'home-management',
-    name: 'Home Management',
-    icon: 'home',
-    color: 'teal',
-    commands: [
-      { id: 'grocery-list', name: 'Grocery List', prompt: 'Build a grocery list for the Vicenzino family. We eat keto/high-protein — include staples we probably need. Factor in meals for Sebby (4 yo, simpler tastes) and pregnancy-safe foods for Carolyn. Also include dog food/treats for Jax. Organize by store section. Keep it budget-conscious — we\'re being strategic with spending right now.' },
-      { id: 'maintenance-schedule', name: 'Home Maintenance', prompt: 'What home maintenance should I tackle this month in Morristown NJ? Consider the current season and weather. Cover: HVAC, gutters, smoke detectors, appliances, lawn/yard, and anything to baby-proof before the new arrival. Give me a prioritized weekend action list.' },
-      { id: 'nursery-setup', name: 'Nursery Prep', prompt: 'Help me plan the nursery setup for baby #2. We already have Sebby\'s stuff from when he was a baby — ask me what we can reuse vs what needs replacing or buying new. Create a prioritized shopping list with budget estimates. Flag anything that\'s time-sensitive (needs to be ordered now vs can wait).' },
-      { id: 'utility-analysis', name: 'Utility Optimization', prompt: 'Help me analyze and optimize our utility costs at home in Morristown NJ. With me working from home during the job search, energy usage is probably up. Pull any utility data available and compare to NJ averages. Suggest practical ways to cut costs — especially things with quick ROI. Every dollar matters during this transition.' },
-      { id: 'smart-home', name: 'Smart Home Setup', prompt: 'Help me optimize our smart home setup. I want automations that save time for a busy family: Sebby\'s bedtime routine, energy savings while I\'m home working, security cameras, Jax-related automations (feeding reminders). Also think about baby monitor integration for the new arrival. What devices and routines would give us the most leverage?' },
-      { id: 'weekend-projects', name: 'Weekend Projects', prompt: 'What should I tackle this weekend at home? Consider: any overdue maintenance, baby prep tasks, organizing/decluttering, Sebby activities, and yard work for the season in NJ. Give me a realistic Saturday/Sunday plan that balances productivity with family time. Don\'t overload it — energy management matters.' },
-    ],
-  },
-  {
     id: 'travel-planning',
-    name: 'Travel Planning',
+    name: 'Travel Agent',
     icon: 'plane',
     color: 'violet',
     commands: [
@@ -97,7 +97,7 @@ export const commandCategories: CommandCategory[] = [
   },
   {
     id: 'kids-education',
-    name: 'Kids & Education',
+    name: 'Child Education Agent',
     icon: 'book',
     color: 'orange',
     commands: [
@@ -106,46 +106,6 @@ export const commandCategories: CommandCategory[] = [
       { id: 'preschool-check', name: 'Preschool & Schools', prompt: 'Help me evaluate preschool and upcoming kindergarten options for Sebastian in the Morristown NJ area. He\'s 4 so kindergarten is coming up. What should I be looking at? Deadlines, open houses, ratings, programs. Also flag any enrichment activities (sports, music, art) good for his age nearby.' },
       { id: 'big-brother-prep', name: 'Big Brother Prep', prompt: 'Help me prepare Sebby (age 4) for becoming a big brother. Carolyn is pregnant. What books, conversations, activities, and routines should we start now? How to handle the transition when the baby arrives — attention management, regression prevention, involving him in baby care. Give me a practical week-by-week plan.' },
       { id: 'family-adventures', name: 'Family Adventures', prompt: 'Plan family-friendly adventures for this weekend near Morristown NJ. We have Sebby (4 years old) and Jax (dog). Consider the current weather and season. Mix of free and paid options. Include parks, museums, farms, nature spots — anything a 4-year-old would love. Dog-friendly options are a bonus.' },
-    ],
-  },
-  {
-    id: 'entertainment',
-    name: 'Entertainment',
-    icon: 'film',
-    color: 'purple',
-    commands: [
-      { id: 'movie-night', name: 'Movie Night Picker', prompt: 'Help me pick a movie for tonight. Ask me: is it family movie night with Sebby (age 4), adults-only after bedtime, or date night with Carolyn? Then recommend 5 options with where to stream, ratings, and a quick pitch. We like smart thrillers, sci-fi, and comedies. For family night, keep it Sebby-appropriate.' },
-      { id: 'restaurant-finder', name: 'Restaurant Finder', prompt: 'Find a restaurant near Morristown NJ. Ask me: is this family dinner (Sebby-friendly), date night with Carolyn, or a networking meal? We eat keto/high-protein when possible. Recommend top 5 with ratings, price range, what to order, and reservation links. Note any that are dog-patio friendly for Jax.' },
-      { id: 'weekend-plans', name: 'Weekend Planner', prompt: 'Plan our weekend in Morristown NJ area. We have Sebby (4), Jax (dog), and Carolyn is pregnant so nothing too physically demanding for her. Check the weather forecast. Mix of: something active for Sebby, something relaxing, and maybe one thing just for me and Carolyn. Balance family time with some productivity time for my projects.' },
-      { id: 'book-recs', name: 'Book Recommendations', prompt: 'Recommend books for me. I\'m interested in: AI strategy, product leadership, career transitions, building things, and smart non-fiction. Also open to well-crafted fiction for unwinding. Suggest 5 books with why each one is relevant to where I am right now — career transition, building ventures, dad life.' },
-      { id: 'date-night', name: 'Date Night Planner', prompt: 'Plan a date night for me and Carolyn near Morristown NJ. She\'s pregnant so factor that in (comfortable seating, good food, not too late). We eat keto/high-protein. Budget-conscious but willing to splurge occasionally. Give me a complete plan: restaurant, activity, and timeline. We probably have a sitter for 4-5 hours max.' },
-      { id: 'sebby-birthday', name: "Sebby's Party Planner", prompt: 'Help me plan a birthday party for Sebastian. He\'s turning 5. Ask me about: theme ideas he\'d love, number of kids, venue (home vs somewhere in Morristown area), budget. Create a complete plan with: activities for 4-5 year olds, food (keto-friendly options for adults, kid-friendly for the kids), decorations, timeline, and a shopping list.' },
-    ],
-  },
-  {
-    id: 'career-growth',
-    name: 'Career & Growth',
-    icon: 'briefcase',
-    color: 'cyan',
-    commands: [
-      { id: 'job-brief', name: 'Job Search Brief', prompt: 'Daily job search brief. Search for fresh postings matching: VP/Director/Head of Product, Analytics, Data & AI, CPO, CDO. Remote preferred, NYC hybrid OK, NJ area. $200K+ base. Exclude pure PM/Scrum roles. Leverage my background: Snowflake, SiriusXM, Credit Suisse, Aetna. Show top 5 with links and a quick fit assessment for each.' },
-      { id: 'resume-optimize', name: 'Resume Optimizer', prompt: 'Help me optimize my resume for a specific role. I\'ll paste the job description. Score my fit (0-100), analyze keyword gaps, suggest STAR-method bullet improvements. Leverage my strengths: AI/data strategy at Snowflake, CX analytics, enterprise product, building multidisciplinary teams. Optimize for ATS. Be direct about gaps too.' },
-      { id: 'interview-prep', name: 'Interview Prep', prompt: 'Help me prepare for an interview. Ask me: company, role, format (behavioral, technical, case study, panel). Generate likely questions tailored to my level (VP/Director). Help me craft answers using my Snowflake/SiriusXM/Credit Suisse stories. Include strategic questions I should ask them. Focus on demonstrating AI strategy + product thinking + analytics leadership.' },
-      { id: 'linkedin-content', name: 'LinkedIn Content', prompt: 'Help me create a LinkedIn post or article. I\'m building thought leadership at the intersection of AI strategy, product thinking, and analytics. My brand is "Stride" — focused on AI adoption, career transitions, and strategic thinking. Suggest 3 post ideas based on what\'s trending in AI/data this week, then help me draft the best one. Tone: professional, grounded, strategic. No buzzword fluff.' },
-      { id: 'networking-outreach', name: 'Networking Outreach', prompt: 'Help me with networking outreach this week. I need to reach out to people at target companies in data/AI/product leadership roles. Help me craft personalized messages — not generic templates. Ask me who I want to reach out to or suggest types of people based on my target roles. I want to build genuine connections, not blast InMails.' },
-      { id: 'salary-research', name: 'Salary Research', prompt: 'Research salary ranges for a specific role. I\'m targeting VP/Director/Head of Data & AI, Product, or Analytics. 20+ years experience. NYC metro / remote. Search Glassdoor, Levels.fyi, Blind for current data. Give me: base range, total comp, equity, and negotiation leverage points given my Snowflake/enterprise background.' },
-    ],
-  },
-  {
-    id: 'emergency-safety',
-    name: 'Emergency & Safety',
-    icon: 'shield',
-    color: 'red',
-    commands: [
-      { id: 'emergency-contacts', name: 'Emergency Contacts', prompt: 'Help me organize emergency contacts for the Vicenzino family in Morristown NJ. Cover: immediate family, 911 and poison control, Morristown Medical Center (nearby hospital), Carolyn\'s OB/GYN, Sebby\'s pediatrician, Jax\'s vet, our pharmacy, plumber/electrician/HVAC, and insurance contacts. Create a formatted reference card I can print and post.' },
-      { id: 'insurance-review', name: 'Insurance Review', prompt: 'Help me review our family\'s insurance coverage. Key items: health insurance (through Carolyn\'s RWJ Barnabas benefits? Or COBRA from Snowflake?), pregnancy/delivery coverage, auto insurance, homeowners in NJ, life insurance (especially important with baby #2 coming and career transition), disability. Flag any gaps — be direct about what we need.' },
-      { id: 'baby-hospital-plan', name: 'Hospital Go-Bag', prompt: 'Help me prepare Carolyn\'s hospital go-bag and our delivery plan. Cover: what to pack for Carolyn, what to pack for me, snacks (keto-friendly for me), what to have ready for Sebby (who watches him during delivery?), Jax care plan, car seat check, hospital pre-registration. Create a checklist we can start packing now.' },
-      { id: 'disaster-prep', name: 'Disaster Preparedness', prompt: 'Help me create a family disaster preparedness plan for Morristown NJ. We have a 4-year-old, a pregnant wife, and a dog. Cover: 72-hour emergency kit, evacuation routes, communication plan, important document backup, power outage plan (especially with a newborn coming), and NJ-specific risks (hurricanes, nor\'easters, flooding). Practical checklist format.' },
     ],
   },
 ];
