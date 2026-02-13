@@ -57,6 +57,11 @@ const iconMap: Record<string, (active: boolean) => ReactElement> = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
     </svg>
   ),
+  bolt: (a) => (
+    <svg className={`h-5 w-5 ${a ? 'text-orange-400' : 'text-gray-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+  ),
 };
 
 const colorMap: Record<string, string> = {
@@ -82,6 +87,8 @@ interface Props {
 export function Sidebar({ activeCategory, onSelectCategory, collapsed, onToggleCollapse }: Props) {
   const allItems = [
     { id: 'dashboard', name: 'Dashboard', icon: 'dashboard', color: 'cyan' },
+    { id: 'claude-skills', name: 'Claude Skills', icon: 'bolt', color: 'orange' },
+    { id: '_divider', name: '', icon: '', color: '' },
     ...commandCategories,
   ];
 
@@ -105,6 +112,11 @@ export function Sidebar({ activeCategory, onSelectCategory, collapsed, onToggleC
       {/* Nav items */}
       <nav className="flex-1 overflow-y-auto py-2 space-y-0.5 px-2">
         {allItems.map((item) => {
+          if (item.id === '_divider') {
+            return (
+              <div key="_divider" className="my-2 mx-1 border-t border-white/5" />
+            );
+          }
           const active = activeCategory === item.id;
           const IconFn = iconMap[item.icon];
           return (

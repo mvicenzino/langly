@@ -75,6 +75,19 @@ SYSTEM_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 
+NEWS_PATTERNS = re.compile(
+    r"\b(news|headline|headlines|digest|briefing|brief me|what'?s happening|current events)\b",
+    re.IGNORECASE,
+)
+
+FINANCE_PATTERNS = re.compile(
+    r"\b(net\s*worth|balance|balances|bank|banks|account|accounts|budget|budgets|"
+    r"spending|expenses?|income|cashflow|cash\s*flow|savings?|"
+    r"recurring|subscriptions?|bills?|credit\s*card|mortgage|loan|"
+    r"personal\s*financ|monarch|how\s*much\s+(?:do\s+i|money))\b",
+    re.IGNORECASE,
+)
+
 # Signals that the query is complex and needs the full agent
 COMPLEX_SIGNALS = re.compile(
     r"\b(compare|analyze|explain|why|how does|write|create a|generate|summarize|translate|"
@@ -191,6 +204,22 @@ def classify(message: str) -> dict | None:
     if SYSTEM_PATTERNS.search(msg):
         return {"route": "system", "params": {}, "label": "System Info"}
 
+    # News / briefings
+    if NEWS_PATTERNS.search(msg):
+        return {"route": "news", "params": {"query": msg}, "label": "News Digest"}
+
+    # Personal finance — Monarch Money
+    if FINANCE_PATTERNS.search(msg):
+        lower = msg.lower()
+        if re.search(r"\b(budget|spending|expenses?)\b", lower):
+            return {"route": "finance_budgets", "params": {}, "label": "Budgets"}
+        if re.search(r"\b(transaction|recent\s*(charges?|purchases?))\b", lower):
+            return {"route": "finance_transactions", "params": {}, "label": "Transactions"}
+        if re.search(r"\b(cashflow|cash\s*flow|income|savings?)\b", lower):
+            return {"route": "finance_overview", "params": {}, "label": "Financial Overview"}
+        # Default: accounts + net worth
+        return {"route": "finance_accounts", "params": {}, "label": "Accounts & Net Worth"}
+
     return None
 
 
@@ -225,6 +254,16 @@ def execute_fast(route_info: dict) -> dict:
         return _handle_note_list()
     elif route == "system":
         return _handle_system()
+    elif route == "news":
+        return _handle_news(params["query"])
+    elif route == "finance_accounts":
+        return _handle_finance_accounts()
+    elif route == "finance_transactions":
+        return _handle_finance_transactions()
+    elif route == "finance_budgets":
+        return _handle_finance_budgets()
+    elif route == "finance_overview":
+        return _handle_finance_overview()
     else:
         return {"response": "I'm not sure how to handle that.", "tool": None, "data": {}}
 
@@ -237,8 +276,20 @@ def _handle_greeting():
         greeting = "Good afternoon, Michael!"
     else:
         greeting = "Good evening, Michael!"
+
+    now = datetime.now()
+    day = now.strftime("%A")
+    date = now.strftime("%B %d")
+    tips = []
+    if hour < 12:
+        tips.append("Ready to tackle the day — what's the priority?")
+    elif hour >= 21:
+        tips.append("Winding down? I can help plan tomorrow or catch up on news.")
+    else:
+        tips.append("How can I help you and the family?")
+
     return {
-        "response": f"{greeting} How can I help you and the family today?",
+        "response": f"{greeting} It's {day}, {date}. {tips[0]}",
         "tool": None,
         "data": {},
     }
@@ -473,3 +524,271 @@ def _handle_system():
         )
 
     return {"response": response, "tool": "System", "data": {}}
+
+
+# ── User news profile (loaded from backend.profile) ──────────────────────────
+
+try:
+    from backend.profile import NEWS_SECTIONS as _PROFILE_NEWS_SECTIONS
+except ImportError:
+    _PROFILE_NEWS_SECTIONS = [
+        {"name": "Politics", "query": "US politics Congress White House"},
+        {"name": "Tech & AI", "query": "AI technology artificial intelligence news today"},
+        {"name": "NYC / NJ Metro", "query": "New Jersey New York City NJ NYC metro area local news"},
+        {"name": "Markets & Business", "query": "stock market Wall Street business earnings"},
+    ]
+
+_NEWS_EXTRAS = ["drudgereport", "x_trending"]
+_NEWS_MAX_PER_SECTION = 4
+
+
+def _handle_news(query: str):
+    """Fetch personalized news digest — sequential fetches to avoid thread issues."""
+    import os
+    import requests
+
+    api_key = os.getenv("SERPAPI_API_KEY", "")
+    if not api_key:
+        return {"response": "News search not configured (missing SerpAPI key).", "tool": "News", "data": {}}
+
+    max_items = _NEWS_MAX_PER_SECTION
+    extras = _NEWS_EXTRAS
+
+    sections = []
+    all_articles = []
+
+    # ── News sections via SerpAPI Google Search (news tab, past 24h) ──
+    for section in _PROFILE_NEWS_SECTIONS:
+        name = section["name"]
+        try:
+            resp = requests.get(
+                "https://serpapi.com/search.json",
+                params={
+                    "engine": "google",
+                    "q": section["query"],
+                    "tbm": "nws",
+                    "tbs": "qdr:d",
+                    "api_key": api_key,
+                    "gl": "us",
+                    "hl": "en",
+                    "num": max_items + 2,
+                },
+                timeout=10,
+            )
+            data = resp.json()
+            results = data.get("news_results", data.get("organic_results", []))[:max_items]
+
+            bullets = []
+            for r in results:
+                title = r.get("title", "")
+                source = r.get("source", "")
+                link = r.get("link", "")
+                snippet = r.get("snippet", "")
+                date = r.get("date", "")
+
+                line = f"**{title}**"
+                if source:
+                    line += f" — *{source}*"
+                if date:
+                    line += f" ({date})"
+                if snippet:
+                    short = snippet[:180].rsplit(" ", 1)[0] + "..." if len(snippet) > 180 else snippet
+                    line += f"\n  {short}"
+                if link:
+                    line += f"\n  [Read more]({link})"
+                bullets.append(line)
+                all_articles.append({"title": title, "source": source, "link": link, "section": name})
+
+            if bullets:
+                sections.append(f"### {name}\n" + "\n\n".join(f"- {b}" for b in bullets))
+            else:
+                sections.append(f"### {name}\n- *No results found*")
+        except Exception as e:
+            print(f"[NEWS] Error fetching {name}: {e}", flush=True)
+            sections.append(f"### {name}\n- *Unable to fetch*")
+
+    # ── Drudge Report ────────────────────────────────────────────────
+    if "drudgereport" in extras:
+        try:
+            from bs4 import BeautifulSoup
+            resp = requests.get("https://www.drudgereport.com/", timeout=8, headers={
+                "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"
+            })
+            soup = BeautifulSoup(resp.text, "html.parser")
+            headlines = []
+            seen = set()
+            for a in soup.select("a[href]"):
+                text = a.get_text(strip=True)
+                href = a.get("href", "")
+                if (text and href.startswith("http") and len(text) > 15
+                        and text not in seen and "drudgereport.com" not in href):
+                    seen.add(text)
+                    headlines.append({"title": text, "link": href})
+                    if len(headlines) >= 6:
+                        break
+
+            if headlines:
+                bullets = []
+                for item in headlines:
+                    line = f"**{item['title']}**"
+                    if item.get("link"):
+                        line += f"\n  [Read more]({item['link']})"
+                    bullets.append(line)
+                    all_articles.append({"title": item["title"], "source": "Drudge Report", "link": item.get("link", ""), "section": "Drudge Report"})
+                sections.append(f"### Drudge Report\n" + "\n\n".join(f"- {b}" for b in bullets))
+        except Exception as e:
+            print(f"[NEWS] Error fetching Drudge: {e}", flush=True)
+            sections.append(f"### Drudge Report\n- *Unable to fetch*")
+
+    # ── X / Twitter Trending ─────────────────────────────────────────
+    if "x_trending" in extras:
+        try:
+            # Use SerpAPI Google search for trending topics on X
+            resp = requests.get(
+                "https://serpapi.com/search.json",
+                params={
+                    "engine": "google",
+                    "q": "site:x.com trending politics OR AI OR technology OR markets",
+                    "api_key": api_key,
+                    "gl": "us",
+                    "hl": "en",
+                    "num": 8,
+                    "tbs": "qdr:d",  # past 24 hours
+                },
+                timeout=10,
+            )
+            data = resp.json()
+            results = data.get("organic_results", [])[:6]
+
+            if results:
+                bullets = []
+                for r in results:
+                    title = r.get("title", "").replace(" / X", "").replace(" on X", "").strip()
+                    link = r.get("link", "")
+                    snippet = r.get("snippet", "")
+
+                    line = f"**{title}**"
+                    if snippet:
+                        # Trim long snippets
+                        short = snippet[:150].rsplit(" ", 1)[0] + "..." if len(snippet) > 150 else snippet
+                        line += f"\n  {short}"
+                    if link:
+                        line += f"\n  [View on X]({link})"
+                    bullets.append(line)
+                    all_articles.append({"title": title, "source": "X", "link": link, "section": "Trending on X"})
+                sections.append(f"### Trending on X\n" + "\n\n".join(f"- {b}" for b in bullets))
+        except Exception as e:
+            print(f"[NEWS] Error fetching X trending: {e}", flush=True)
+            sections.append(f"### Trending on X\n- *Unable to fetch*")
+
+    if not sections:
+        return {"response": "Couldn't fetch news right now. Try again in a moment.", "tool": "News", "data": []}
+
+    header = f"## News Digest — {datetime.now().strftime('%A, %B %d')}\n\n"
+    response = header + "\n\n".join(sections)
+
+    return {"response": response, "tool": "News", "data": all_articles}
+
+
+# ── Finance fast-path handlers ────────────────────────────────────────────────
+
+def _handle_finance_accounts():
+    try:
+        from backend.services.monarch_service import get_accounts
+        data = get_accounts()
+        nw = data["netWorth"]
+        assets = data["totalAssets"]
+        liab = data["totalLiabilities"]
+
+        lines = [
+            f"## Net Worth: **${nw:,.2f}**\n",
+            f"- **Assets:** ${assets:,.2f}",
+            f"- **Liabilities:** ${liab:,.2f}\n",
+        ]
+
+        for type_name, accts in data["accountsByType"].items():
+            lines.append(f"### {type_name}")
+            for a in accts:
+                inst = f" ({a['institution']})" if a.get("institution") else ""
+                lines.append(f"- {a['name']}{inst}: **${a['balance']:,.2f}**")
+            lines.append("")
+
+        return {"response": "\n".join(lines), "tool": "PersonalFinance", "data": data}
+    except Exception as e:
+        return {"response": f"Couldn't fetch accounts: {e}", "tool": "PersonalFinance", "data": {}}
+
+
+def _handle_finance_transactions():
+    try:
+        from backend.services.monarch_service import get_transactions
+        txns = get_transactions(limit=15)
+
+        if not txns:
+            return {"response": "No recent transactions found.", "tool": "PersonalFinance", "data": []}
+
+        lines = ["## Recent Transactions\n"]
+        for t in txns:
+            amount = t["amount"]
+            sign = "+" if amount > 0 else ""
+            pending = " *(pending)*" if t.get("isPending") else ""
+            lines.append(
+                f"- **{t['date']}** | {t['merchant']} | {t['category']} | "
+                f"**{sign}${abs(amount):,.2f}**{pending}"
+            )
+
+        return {"response": "\n".join(lines), "tool": "PersonalFinance", "data": txns}
+    except Exception as e:
+        return {"response": f"Couldn't fetch transactions: {e}", "tool": "PersonalFinance", "data": {}}
+
+
+def _handle_finance_budgets():
+    try:
+        from backend.services.monarch_service import get_budgets
+        data = get_budgets()
+
+        total_b = data["totalBudgeted"]
+        total_s = data["totalSpent"]
+        total_r = data["totalRemaining"]
+
+        lines = [
+            f"## Monthly Budget\n",
+            f"- **Budgeted:** ${total_b:,.2f}",
+            f"- **Spent:** ${total_s:,.2f}",
+            f"- **Remaining:** ${total_r:,.2f}\n",
+            "### By Category\n",
+        ]
+
+        for c in data["categories"]:
+            pct = c["percentUsed"]
+            bar = "!" if pct > 100 else ("~" if pct > 80 else "")
+            indicator = f" {bar}" if bar else ""
+            lines.append(
+                f"- {c['category']}: ${c['spent']:,.2f} / ${c['budgeted']:,.2f} "
+                f"({pct:.0f}%){indicator}"
+            )
+
+        return {"response": "\n".join(lines), "tool": "PersonalFinance", "data": data}
+    except Exception as e:
+        return {"response": f"Couldn't fetch budgets: {e}", "tool": "PersonalFinance", "data": {}}
+
+
+def _handle_finance_overview():
+    try:
+        from backend.services.monarch_service import get_accounts, get_cashflow
+        accounts = get_accounts()
+        cashflow = get_cashflow()
+
+        lines = [
+            f"## Financial Overview\n",
+            f"### Net Worth: **${accounts['netWorth']:,.2f}**",
+            f"- Assets: ${accounts['totalAssets']:,.2f}",
+            f"- Liabilities: ${accounts['totalLiabilities']:,.2f}\n",
+            f"### Cash Flow (Last 30 Days)",
+            f"- Income: **${cashflow['income']:,.2f}**",
+            f"- Expenses: **${cashflow['expenses']:,.2f}**",
+            f"- Savings: **${cashflow['savings']:,.2f}** ({cashflow['savingsRate']:.1f}%)",
+        ]
+
+        return {"response": "\n".join(lines), "tool": "PersonalFinance", "data": {"accounts": accounts, "cashflow": cashflow}}
+    except Exception as e:
+        return {"response": f"Couldn't fetch financial overview: {e}", "tool": "PersonalFinance", "data": {}}
