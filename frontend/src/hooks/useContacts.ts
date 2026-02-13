@@ -24,13 +24,17 @@ export function useContacts() {
     refresh();
   }, [refresh]);
 
-  const create = useCallback(async (data: { name: string; company?: string; email?: string; phone?: string; notes?: string }) => {
+  const create = useCallback(async (data: {
+    name: string;
+    company?: string;
+    title?: string;
+    contactType?: string;
+    email?: string;
+    phone?: string;
+    linkedinUrl?: string;
+    notes?: string;
+  }) => {
     await contactsApi.createContact(data);
-    await refresh();
-  }, [refresh]);
-
-  const update = useCallback(async (id: number, data: Partial<Pick<Contact, 'name' | 'company' | 'email' | 'phone' | 'notes'>>) => {
-    await contactsApi.updateContact(id, data);
     await refresh();
   }, [refresh]);
 
@@ -39,5 +43,5 @@ export function useContacts() {
     await refresh();
   }, [refresh]);
 
-  return { contacts, loading, error, refresh, create, update, remove };
+  return { contacts, loading, error, refresh, create, remove };
 }

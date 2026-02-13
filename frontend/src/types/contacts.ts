@@ -1,26 +1,27 @@
 export interface Contact {
   id: number;
   name: string;
-  company: string;
-  email: string;
-  phone: string;
-  notes: string;
-  mention_count: number;
-  created_at: string;
-  updated_at: string;
+  email: string | null;
+  phone: string | null;
+  linkedinUrl: string | null;
+  title: string | null;
+  contactType: string | null;
+  companyName: string | null;
+  relationshipStrength: number | null;
+  lastContactDate: string | null;
+  nextFollowupDate: string | null;
+  notes: string | null;
+  howWeMet: string | null;
+  createdAt: string | null;
+}
+
+export interface ContactDetail extends Contact {
+  updatedAt: string | null;
 }
 
 export interface ContactSearchResult {
   id: number;
   name: string;
-  company: string;
-}
-
-export interface ContactDetail extends Contact {
-  mentioned_in: {
-    id: number;
-    title: string;
-    content: string;
-    mentioned_at: string;
-  }[];
+  companyName: string | null;
+  title: string | null;
 }
