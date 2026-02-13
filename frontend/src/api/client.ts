@@ -62,6 +62,7 @@ export async function apiDelete<T>(path: string): Promise<T> {
 // ── Calendar (Kindora) ──────────────────────────────────────────────────────
 
 import type { CalendarEvent, FamilyMember } from '../types/calendar';
+import type { StridePipeline, StrideApplication, StrideStats, StrideEvent } from '../types/stride';
 
 export const calendarApi = {
   getToday: () => apiGet<CalendarEvent[]>('/api/calendar/today'),
@@ -77,4 +78,17 @@ export const calendarApi = {
   updateEvent: (id: string, data: Partial<CalendarEvent>) => apiPut<CalendarEvent>(`/api/calendar/events/${id}`, data),
   deleteEvent: (id: string) => apiDelete<{ success: boolean }>(`/api/calendar/events/${id}`),
   getMembers: () => apiGet<FamilyMember[]>('/api/calendar/members'),
+};
+
+// ── Stride (Job Tracker) ────────────────────────────────────────────────────
+
+export const strideApi = {
+  getPipeline: () => apiGet<StridePipeline>('/api/stride/pipeline'),
+  getApplications: (status?: string, limit = 20) => {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (status) params.set('status', status);
+    return apiGet<StrideApplication[]>(`/api/stride/applications?${params}`);
+  },
+  getStats: () => apiGet<StrideStats>('/api/stride/stats'),
+  getUpcomingEvents: () => apiGet<StrideEvent[]>('/api/stride/events'),
 };

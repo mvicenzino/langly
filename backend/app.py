@@ -32,6 +32,7 @@ def create_app():
     from backend.api.contacts import contacts_bp
     from backend.api.finance import finance_bp
     from backend.api.calendar import calendar_bp
+    from backend.api.stride import stride_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(health_bp)
@@ -49,6 +50,7 @@ def create_app():
     app.register_blueprint(contacts_bp)
     app.register_blueprint(finance_bp)
     app.register_blueprint(calendar_bp)
+    app.register_blueprint(stride_bp)
 
     # Register socket handlers
     from backend.sockets.chat_handler import register_handlers

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { useInsightStore } from '../../store/insightStore';
 
 interface Props {
   title: string;
@@ -6,9 +7,10 @@ interface Props {
   children: ReactNode;
   headerRight?: ReactNode;
   accentColor?: string;
+  insightPrompt?: string;
 }
 
-export function WidgetPanel({ title, icon, children, headerRight, accentColor = 'cyan' }: Props) {
+export function WidgetPanel({ title, icon, children, headerRight, accentColor = 'cyan', insightPrompt }: Props) {
   const colorMap: Record<string, { border: string; text: string; glow: string }> = {
     cyan: { border: 'border-cyan-500/15', text: 'text-cyan-400', glow: 'via-cyan-500/40' },
     emerald: { border: 'border-emerald-500/15', text: 'text-emerald-400', glow: 'via-emerald-500/40' },
@@ -37,7 +39,23 @@ export function WidgetPanel({ title, icon, children, headerRight, accentColor = 
             {title}
           </h3>
         </div>
-        {headerRight}
+        <div className="flex items-center gap-1">
+          {insightPrompt && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                useInsightStore.getState().trigger(insightPrompt, `${title} Insights`);
+              }}
+              className="p-1 rounded hover:bg-white/5 text-gray-500 hover:text-amber-400 transition-colors"
+              title="Get AI insights"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M12 3l1.912 5.813a2 2 0 001.275 1.275L21 12l-5.813 1.912a2 2 0 00-1.275 1.275L12 21l-1.912-5.813a2 2 0 00-1.275-1.275L3 12l5.813-1.912a2 2 0 001.275-1.275L12 3z" />
+              </svg>
+            </button>
+          )}
+          {headerRight}
+        </div>
       </div>
 
       {/* Separator */}

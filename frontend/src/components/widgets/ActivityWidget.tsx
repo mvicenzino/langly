@@ -36,6 +36,7 @@ export function ActivityWidget() {
     <WidgetPanel
       title="Activity Feed"
       accentColor="violet"
+      insightPrompt="Analyze my recent activity feed. Identify key trends, patterns, and suggest areas to focus on."
       icon={
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />

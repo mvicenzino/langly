@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 interface Tab {
   id: string;
   label: string;
@@ -8,6 +10,7 @@ interface Props {
   activeTab: string;
   onSelectTab: (id: string) => void;
   accentColor?: string;
+  actions?: ReactNode;
 }
 
 const colorMap: Record<string, { active: string; indicator: string }> = {
@@ -23,7 +26,7 @@ const colorMap: Record<string, { active: string; indicator: string }> = {
   red: { active: 'text-red-400', indicator: 'bg-red-400' },
 };
 
-export function TabBar({ tabs, activeTab, onSelectTab, accentColor = 'cyan' }: Props) {
+export function TabBar({ tabs, activeTab, onSelectTab, accentColor = 'cyan', actions }: Props) {
   const colors = colorMap[accentColor] || colorMap.cyan;
 
   return (
@@ -47,6 +50,7 @@ export function TabBar({ tabs, activeTab, onSelectTab, accentColor = 'cyan' }: P
           </button>
         );
       })}
+      {actions && <div className="ml-auto flex items-center pr-3">{actions}</div>}
     </div>
   );
 }

@@ -73,6 +73,7 @@ export function SpendingWidget() {
     <WidgetPanel
       title="Spending Breakdown"
       accentColor="emerald"
+      insightPrompt="Deep dive into my spending breakdown. Identify overspending categories, optimization areas, and compare against typical budgets."
       icon={
         <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />

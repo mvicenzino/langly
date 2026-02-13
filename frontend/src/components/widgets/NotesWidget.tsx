@@ -302,6 +302,7 @@ export function NotesWidget() {
     <WidgetPanel
       title="Intel Files"
       accentColor="purple"
+      insightPrompt="Review my notes and intel files. Identify key themes, action items, and connections between notes."
       icon={noteIcon}
       headerRight={
         isLoading ? (

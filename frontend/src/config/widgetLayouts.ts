@@ -86,17 +86,15 @@ export const PAGE_LAYOUTS: Record<string, PageLayout> = {
       item('net-worth', 0, 0, 4, 4),
       item('net-worth-trend', 4, 0, 4, 4),
       item('cashflow', 8, 0, 4, 4),
-      item('spending', 0, 4, 4, 4),
-      item('transactions', 4, 4, 4, 4),
-      item('budget', 8, 4, 4, 4),
+      item('spending', 0, 4, 6, 4),
+      item('transactions', 6, 4, 6, 4),
     ]),
   },
 
   'personal-finance-widgets': {
     rowHeight: 71,
     layouts: responsive([
-      item('stocks', 0, 0, 6, 4),
-      item('activity', 6, 0, 6, 4),
+      item('stocks', 0, 0, 12, 4),
     ]),
   },
 
@@ -104,27 +102,7 @@ export const PAGE_LAYOUTS: Record<string, PageLayout> = {
   'family-calendar-schedule': {
     rowHeight: 71,
     layouts: responsive([
-      item('calendar', 0, 0, 4, 4),
-      item('weather', 4, 0, 4, 4),
-      item('todos', 8, 0, 4, 4),
-    ]),
-  },
-
-  'family-calendar-widgets': {
-    rowHeight: 61,
-    layouts: responsive([
-      item('todos', 0, 0, 4, 4),
-      item('notes', 4, 0, 4, 4),
-      item('weather', 8, 0, 4, 4),
-    ]),
-  },
-
-  // ─── Health & Wellness ───────────────────────────────
-  'health-wellness-widgets': {
-    rowHeight: 61,
-    layouts: responsive([
-      item('todos', 0, 0, 6, 4),
-      item('weather', 6, 0, 6, 4),
+      { i: 'calendar', x: 0, y: 0, w: 12, h: 7, minW: 6, minH: 6 },
     ]),
   },
 
@@ -132,27 +110,7 @@ export const PAGE_LAYOUTS: Record<string, PageLayout> = {
   'travel-planning-widgets': {
     rowHeight: 61,
     layouts: responsive([
-      item('weather', 0, 0, 6, 4),
-      item('notes', 6, 0, 6, 4),
-    ]),
-  },
-
-  // ─── Kids & Education ────────────────────────────────
-  'kids-education-widgets': {
-    rowHeight: 61,
-    layouts: responsive([
-      item('todos', 0, 0, 6, 4),
-      item('notes', 6, 0, 6, 4),
-    ]),
-  },
-
-  // ─── Career Growth ───────────────────────────────────
-  'career-growth-widgets': {
-    rowHeight: 61,
-    layouts: responsive([
-      item('contacts', 0, 0, 4, 4),
-      item('notes', 4, 0, 4, 4),
-      item('stocks', 8, 0, 4, 4),
+      item('weather', 0, 0, 12, 4),
     ]),
   },
 };
