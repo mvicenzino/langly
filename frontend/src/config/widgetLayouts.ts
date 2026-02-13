@@ -75,7 +75,8 @@ export const PAGE_LAYOUTS: Record<string, PageLayout> = {
     layouts: responsive([
       item('weather', 0, 0, 4, 4),
       item('stocks', 4, 0, 4, 4),
-      item('activity', 8, 0, 4, 4),
+      item('stride', 8, 0, 4, 4),
+      item('activity', 0, 4, 4, 4),
     ]),
   },
 

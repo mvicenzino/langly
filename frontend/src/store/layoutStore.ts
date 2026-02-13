@@ -39,7 +39,7 @@ export const useLayoutStore = create<LayoutState>()(
     }),
     {
       name: 'langly-page-layouts',
-      version: 4,
+      version: 5,
       migrate: () => ({ pageLayouts: {} }),
     }
   )

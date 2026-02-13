@@ -295,6 +295,7 @@ function Dashboard() {
                     <WidgetGrid pageId="daily-briefs-widgets">
                       <div key="weather"><WeatherWidget /></div>
                       <div key="stocks"><StockWidget /></div>
+                      <div key="stride"><StrideWidget /></div>
                       <div key="activity"><ActivityWidget /></div>
                     </WidgetGrid>
                   )}
