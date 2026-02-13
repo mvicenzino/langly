@@ -1,104 +1,90 @@
-"""Apple Reminders integration via CalDAV (iCloud)."""
+"""Apple Reminders integration via AppleScript (macOS native)."""
 from __future__ import annotations
 
 import os
-import uuid
+import subprocess
+import json
 from flask import Blueprint, jsonify, request
 
 reminders_bp = Blueprint("reminders", __name__)
 
-APPLE_ID = os.getenv("APPLE_ID", "")
-APPLE_APP_PASSWORD = os.getenv("APPLE_APP_PASSWORD", "")
 REMINDER_LIST_NAME = os.getenv("APPLE_REMINDER_LIST", "Langly")
 
-_client = None
 
-
-def _get_client():
-    global _client
-    if _client is not None:
-        return _client
-    if not APPLE_ID or not APPLE_APP_PASSWORD:
-        return None
-    try:
-        import caldav
-        _client = caldav.DAVClient(
-            url="https://caldav.icloud.com",
-            username=APPLE_ID,
-            password=APPLE_APP_PASSWORD,
-        )
-        return _client
-    except Exception:
-        return None
-
-
-def _get_list():
-    """Find the Langly reminder list."""
-    client = _get_client()
-    if not client:
-        return None
-    try:
-        import caldav
-        principal = client.principal()
-        for cal in principal.calendars():
-            props = cal.get_properties([caldav.dav.DisplayName()])
-            name = props.get("{DAV:}displayname", "")
-            if name == REMINDER_LIST_NAME:
-                return cal
-        # Create it if it doesn't exist
-        return principal.make_calendar(
-            name=REMINDER_LIST_NAME,
-            supported_calendar_component_set=["VTODO"],
-        )
-    except Exception:
-        return None
-
-
-def _parse_todo(obj) -> dict | None:
-    """Parse a CalDAV object into a reminder dict."""
-    try:
-        obj.load()
-        raw = obj.data
-        if not raw or "VTODO" not in raw:
-            return None
-        import vobject
-        cal_obj = vobject.readOne(raw)
-        vtodo = cal_obj.vtodo
-        summary = str(vtodo.summary.value) if hasattr(vtodo, "summary") else ""
-        status = str(vtodo.status.value) if hasattr(vtodo, "status") else "NEEDS-ACTION"
-        uid = str(vtodo.uid.value) if hasattr(vtodo, "uid") else ""
-        due = str(vtodo.due.value) if hasattr(vtodo, "due") else ""
-        priority = int(vtodo.priority.value) if hasattr(vtodo, "priority") else 0
-        notes = str(vtodo.description.value) if hasattr(vtodo, "description") else ""
-        return {
-            "uid": uid,
-            "task": summary,
-            "done": status == "COMPLETED",
-            "due": due,
-            "priority": priority,
-            "notes": notes,
-            "url": str(obj.url),
-        }
-    except Exception:
-        return None
+def _run_applescript(script: str) -> str:
+    """Run an AppleScript and return stdout."""
+    result = subprocess.run(
+        ["osascript", "-e", script],
+        capture_output=True, text=True, timeout=15,
+    )
+    if result.returncode != 0:
+        raise RuntimeError(result.stderr.strip() or "AppleScript failed")
+    return result.stdout.strip()
 
 
 @reminders_bp.route("/api/reminders")
 def list_reminders():
-    """List all reminders from Apple Reminders."""
-    if not APPLE_ID or not APPLE_APP_PASSWORD:
-        return jsonify({"configured": False, "items": []})
+    """List all reminders from Apple Reminders via AppleScript."""
     try:
-        cal = _get_list()
-        if not cal:
-            return jsonify({"configured": False, "items": []})
+        script = f'''
+tell application "Reminders"
+    try
+        set langlyList to list "{REMINDER_LIST_NAME}"
+    on error
+        return "LIST_NOT_FOUND"
+    end try
+    set todoItems to every reminder of langlyList whose completed is false
+    set doneItems to every reminder of langlyList whose completed is true
+    set output to ""
+    repeat with r in todoItems
+        set dueStr to ""
+        try
+            set dueStr to (due date of r as string)
+        end try
+        set notesStr to ""
+        try
+            set notesStr to body of r
+        end try
+        set output to output & "false" & "|||" & (name of r) & "|||" & (id of r) & "|||" & dueStr & "|||" & (priority of r as string) & "|||" & notesStr & linefeed
+    end repeat
+    repeat with r in doneItems
+        set dueStr to ""
+        try
+            set dueStr to (due date of r as string)
+        end try
+        set notesStr to ""
+        try
+            set notesStr to body of r
+        end try
+        set output to output & "true" & "|||" & (name of r) & "|||" & (id of r) & "|||" & dueStr & "|||" & (priority of r as string) & "|||" & notesStr & linefeed
+    end repeat
+    return output
+end tell'''
+        raw = _run_applescript(script)
+        if raw == "LIST_NOT_FOUND":
+            return jsonify({"configured": True, "items": [], "error": f"List '{REMINDER_LIST_NAME}' not found in Reminders"})
+
         items = []
-        for obj in cal.objects():
-            parsed = _parse_todo(obj)
-            if parsed:
-                items.append(parsed)
-        # Sort: incomplete first, then by priority (higher first)
-        items.sort(key=lambda x: (x["done"], -x["priority"]))
+        for line in raw.strip().split("\n"):
+            if not line.strip():
+                continue
+            parts = line.split("|||")
+            if len(parts) < 3:
+                continue
+            done = parts[0].strip() == "true"
+            task = parts[1].strip()
+            uid = parts[2].strip()
+            due = parts[3].strip() if len(parts) > 3 else ""
+            priority = int(parts[4].strip()) if len(parts) > 4 and parts[4].strip().isdigit() else 0
+            notes = parts[5].strip() if len(parts) > 5 else ""
+            items.append({
+                "uid": uid,
+                "task": task,
+                "done": done,
+                "due": due,
+                "priority": priority,
+                "notes": notes,
+            })
         return jsonify({"configured": True, "items": items})
     except Exception as e:
         import traceback
@@ -108,88 +94,93 @@ def list_reminders():
 
 @reminders_bp.route("/api/reminders", methods=["POST"])
 def add_reminder():
-    """Add a new reminder."""
-    cal = _get_list()
-    if not cal:
-        return jsonify({"error": "Apple Reminders not configured"}), 503
+    """Add a new reminder via AppleScript."""
     body = request.get_json() or {}
     task = body.get("task", "").strip()
     if not task:
         return jsonify({"error": "task is required"}), 400
 
-    due = body.get("due", "")
-    priority = body.get("priority", 0)
     notes = body.get("notes", "")
-    uid = str(uuid.uuid4())
-
-    vcal = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nBEGIN:VTODO\r\n"
-    vcal += f"UID:{uid}\r\n"
-    vcal += f"SUMMARY:{task}\r\n"
-    vcal += "STATUS:NEEDS-ACTION\r\n"
-    if due:
-        vcal += f"DUE:{due}\r\n"
-    if priority:
-        vcal += f"PRIORITY:{priority}\r\n"
-    if notes:
-        vcal += f"DESCRIPTION:{notes}\r\n"
-    vcal += "END:VTODO\r\nEND:VCALENDAR"
+    # Escape quotes for AppleScript
+    task_escaped = task.replace('"', '\\"')
+    notes_escaped = notes.replace('"', '\\"') if notes else ""
 
     try:
-        cal.save_event(vcal)
+        script = f'''
+tell application "Reminders"
+    try
+        set langlyList to list "{REMINDER_LIST_NAME}"
+    on error
+        make new list with properties {{name:"{REMINDER_LIST_NAME}"}}
+        set langlyList to list "{REMINDER_LIST_NAME}"
+    end try
+    set newReminder to make new reminder at langlyList with properties {{name:"{task_escaped}"}}
+    if "{notes_escaped}" is not "" then
+        set body of newReminder to "{notes_escaped}"
+    end if
+    return id of newReminder
+end tell'''
+        uid = _run_applescript(script)
         return jsonify({"uid": uid, "task": task, "done": False})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-@reminders_bp.route("/api/reminders/<uid>", methods=["PUT"])
+@reminders_bp.route("/api/reminders/<path:uid>", methods=["PUT"])
 def update_reminder(uid):
     """Toggle done status or update a reminder."""
-    cal = _get_list()
-    if not cal:
-        return jsonify({"error": "Apple Reminders not configured"}), 503
-
     body = request.get_json() or {}
 
     try:
-        for obj in cal.objects():
-            obj.load()
-            raw = obj.data
-            if not raw or uid not in raw:
-                continue
-            import vobject
-            cal_obj = vobject.readOne(raw)
-            vtodo = cal_obj.vtodo
+        set_props = []
+        if "done" in body:
+            val = "true" if body["done"] else "false"
+            set_props.append(f"set completed of r to {val}")
+        if "task" in body:
+            task_escaped = body["task"].replace('"', '\\"')
+            set_props.append(f'set name of r to "{task_escaped}"')
 
-            if "done" in body:
-                vtodo.status.value = "COMPLETED" if body["done"] else "NEEDS-ACTION"
-            if "task" in body:
-                vtodo.summary.value = body["task"]
+        if not set_props:
+            return jsonify({"error": "Nothing to update"}), 400
 
-            obj.data = cal_obj.serialize()
-            obj.save()
-            return jsonify({"uid": uid, "updated": True})
-
-        return jsonify({"error": "Reminder not found"}), 404
+        props_script = "\n            ".join(set_props)
+        script = f'''
+tell application "Reminders"
+    set langlyList to list "{REMINDER_LIST_NAME}"
+    repeat with r in (every reminder of langlyList)
+        if (id of r) is "{uid}" then
+            {props_script}
+            return "OK"
+        end if
+    end repeat
+    return "NOT_FOUND"
+end tell'''
+        result = _run_applescript(script)
+        if result == "NOT_FOUND":
+            return jsonify({"error": "Reminder not found"}), 404
+        return jsonify({"uid": uid, "updated": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-@reminders_bp.route("/api/reminders/<uid>", methods=["DELETE"])
+@reminders_bp.route("/api/reminders/<path:uid>", methods=["DELETE"])
 def delete_reminder(uid):
     """Delete a reminder."""
-    cal = _get_list()
-    if not cal:
-        return jsonify({"error": "Apple Reminders not configured"}), 503
-
     try:
-        for obj in cal.objects():
-            obj.load()
-            raw = obj.data
-            if not raw or uid not in raw:
-                continue
-            obj.delete()
-            return jsonify({"uid": uid, "deleted": True})
-
-        return jsonify({"error": "Reminder not found"}), 404
+        script = f'''
+tell application "Reminders"
+    set langlyList to list "{REMINDER_LIST_NAME}"
+    repeat with r in (every reminder of langlyList)
+        if (id of r) is "{uid}" then
+            delete r
+            return "OK"
+        end if
+    end repeat
+    return "NOT_FOUND"
+end tell'''
+        result = _run_applescript(script)
+        if result == "NOT_FOUND":
+            return jsonify({"error": "Reminder not found"}), 404
+        return jsonify({"uid": uid, "deleted": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
