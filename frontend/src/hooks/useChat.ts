@@ -87,10 +87,17 @@ export function useChat() {
     });
 
     socket.on('chat:done', (data: { response: string; toolCalls: ToolCall[] }) => {
+      // Capture ref values before they're cleared — React's functional
+      // setState runs later during render, refs would be null by then
+      const assistantId = currentAssistantId.current;
+      const sid = sessionIdRef.current;
       const finalToolCalls = data.toolCalls.length > 0 ? data.toolCalls : toolCallsRef.current;
+      const finalThinking = [...thinkingRef.current];
+
+
       setMessages((prev) =>
         prev.map((m) =>
-          m.id === currentAssistantId.current
+          m.id === assistantId
             ? {
                 ...m,
                 content: data.response,
@@ -103,21 +110,26 @@ export function useChat() {
       setIsLoading(false);
 
       // Persist assistant message
-      const sid = sessionIdRef.current;
       if (sid) {
-        saveMessage(sid, 'assistant', data.response, finalToolCalls, thinkingRef.current).catch(
+        saveMessage(sid, 'assistant', data.response, finalToolCalls, finalThinking).catch(
           () => {}
         );
       }
 
       currentAssistantId.current = null;
+      toolCallsRef.current = [];
+      thinkingRef.current = [];
     });
 
     socket.on('chat:error', (data: { error: string }) => {
-      updateAssistantMessage({
-        content: `Error: ${data.error}`,
-        isStreaming: false,
-      });
+      const assistantId = currentAssistantId.current;
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === assistantId
+            ? { ...m, content: `Error: ${data.error}`, isStreaming: false }
+            : m
+        )
+      );
       setIsLoading(false);
       currentAssistantId.current = null;
     });
@@ -179,6 +191,16 @@ export function useChat() {
 
       // Persist user message
       saveMessage(sid, 'user', content.trim()).catch(() => {});
+
+      // Ensure socket is connected before emitting
+      if (!socket.connected) {
+        connectSocket();
+        // Wait for connection before emitting
+        await new Promise<void>((resolve) => {
+          socket.once('connect', resolve);
+          setTimeout(resolve, 3000); // fallback timeout
+        });
+      }
 
       socket.emit('chat:send', { message: content.trim() });
     },

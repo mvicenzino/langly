@@ -80,6 +80,19 @@ NEWS_PATTERNS = re.compile(
     re.IGNORECASE,
 )
 
+CALENDAR_PATTERNS = re.compile(
+    r"\b(calendar|schedule|agenda|event|events|appointment|appointments|"
+    r"what'?s\s+on|what'?s\s+happening|family\s+schedule|sebby'?s\s+schedule|"
+    r"kindora|upcoming\s+events?|today'?s\s+(?:schedule|agenda|events?))\b",
+    re.IGNORECASE,
+)
+
+CALENDAR_ADD_PATTERNS = re.compile(
+    r"\b(add|create|schedule|book|set up|plan)\b.+\b(event|appointment|meeting|visit)\b|"
+    r"\b(event|appointment|meeting|visit)\b.+\b(add|create|schedule|book)\b",
+    re.IGNORECASE,
+)
+
 FINANCE_PATTERNS = re.compile(
     r"\b(net\s*worth|balance|balances|bank|banks|account|accounts|budget|budgets|"
     r"spending|expenses?|income|cashflow|cash\s*flow|savings?|"
@@ -208,6 +221,20 @@ def classify(message: str) -> dict | None:
     if NEWS_PATTERNS.search(msg):
         return {"route": "news", "params": {"query": msg}, "label": "News Digest"}
 
+    # Family calendar — Kindora
+    if CALENDAR_PATTERNS.search(msg) and not CALENDAR_ADD_PATTERNS.search(msg):
+        lower = msg.lower()
+        if re.search(r"\b(today|this morning|tonight|today'?s)\b", lower):
+            return {"route": "calendar_today", "params": {}, "label": "Today's Calendar"}
+        if re.search(r"\b(this week|next few days|upcoming|next \d+ days)\b", lower):
+            days_match = re.search(r"next (\d+) days", lower)
+            days = int(days_match.group(1)) if days_match else 7
+            return {"route": "calendar_week", "params": {"days": days}, "label": "Upcoming Events"}
+        if re.search(r"\b(family\s*members?|who'?s\s+in)\b", lower):
+            return {"route": "calendar_family", "params": {}, "label": "Family Members"}
+        # Default: today's events
+        return {"route": "calendar_today", "params": {}, "label": "Today's Calendar"}
+
     # Personal finance — Monarch Money
     if FINANCE_PATTERNS.search(msg):
         lower = msg.lower()
@@ -256,6 +283,12 @@ def execute_fast(route_info: dict) -> dict:
         return _handle_system()
     elif route == "news":
         return _handle_news(params["query"])
+    elif route == "calendar_today":
+        return _handle_calendar_today()
+    elif route == "calendar_week":
+        return _handle_calendar_week(params.get("days", 7))
+    elif route == "calendar_family":
+        return _handle_calendar_family()
     elif route == "finance_accounts":
         return _handle_finance_accounts()
     elif route == "finance_transactions":
@@ -688,6 +721,121 @@ def _handle_news(query: str):
     response = header + "\n\n".join(sections)
 
     return {"response": response, "tool": "News", "data": all_articles}
+
+
+# ── Calendar fast-path handlers ───────────────────────────────────────────────
+
+def _format_event_time(start_str: str, end_str: str) -> str:
+    """Format event start/end times for display."""
+    try:
+        start = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
+        end = datetime.fromisoformat(end_str.replace("Z", "+00:00"))
+        return f"{start.strftime('%I:%M %p')} – {end.strftime('%I:%M %p')}"
+    except (ValueError, AttributeError):
+        return f"{start_str} – {end_str}"
+
+
+def _handle_calendar_today():
+    try:
+        from backend.services.kindora_service import get_today, get_family_members
+        events = get_today()
+        members = get_family_members()
+        member_map = {m["id"]: m["name"] for m in members}
+
+        if not events:
+            now = datetime.now()
+            return {
+                "response": f"## Today's Calendar — {now.strftime('%A, %B %d')}\n\nNo events scheduled for today. Enjoy the free time!",
+                "tool": "Calendar",
+                "data": [],
+            }
+
+        now = datetime.now()
+        lines = [f"## Today's Calendar — {now.strftime('%A, %B %d')}\n"]
+
+        for ev in events:
+            time_str = _format_event_time(ev["startTime"], ev["endTime"])
+            who = ", ".join(member_map.get(mid, mid) for mid in ev.get("memberIds", []))
+            status = " [done]" if ev.get("completed") else ""
+
+            line = f"- **{time_str}** — {ev['title']}{status}"
+            if who:
+                line += f" ({who})"
+            if ev.get("description"):
+                line += f"\n  _{ev['description']}_"
+            lines.append(line)
+
+        lines.append(f"\n*{len(events)} event{'s' if len(events) != 1 else ''} today*")
+        return {"response": "\n".join(lines), "tool": "Calendar", "data": events}
+    except Exception as e:
+        return {"response": f"Couldn't fetch today's calendar: {e}", "tool": "Calendar", "data": {}}
+
+
+def _handle_calendar_week(days: int = 7):
+    try:
+        from backend.services.kindora_service import get_upcoming, get_family_members
+        events = get_upcoming(days=days)
+        members = get_family_members()
+        member_map = {m["id"]: m["name"] for m in members}
+
+        if not events:
+            return {
+                "response": f"## Upcoming {days} Days\n\nNo events scheduled. Calendar is clear!",
+                "tool": "Calendar",
+                "data": [],
+            }
+
+        # Group by date
+        by_date: dict = {}
+        for ev in events:
+            try:
+                dt = datetime.fromisoformat(ev["startTime"].replace("Z", "+00:00"))
+                date_key = dt.strftime("%Y-%m-%d")
+                date_label = dt.strftime("%A, %B %d")
+            except (ValueError, AttributeError):
+                date_key = "unknown"
+                date_label = "Unknown Date"
+            by_date.setdefault(date_key, {"label": date_label, "events": []})
+            by_date[date_key]["events"].append(ev)
+
+        lines = [f"## Upcoming {days} Days ({len(events)} events)\n"]
+
+        for date_key in sorted(by_date.keys()):
+            day_info = by_date[date_key]
+            lines.append(f"### {day_info['label']}")
+            for ev in day_info["events"]:
+                time_str = _format_event_time(ev["startTime"], ev["endTime"])
+                who = ", ".join(member_map.get(mid, mid) for mid in ev.get("memberIds", []))
+                line = f"- **{time_str}** — {ev['title']}"
+                if who:
+                    line += f" ({who})"
+                lines.append(line)
+            lines.append("")
+
+        return {"response": "\n".join(lines), "tool": "Calendar", "data": events}
+    except Exception as e:
+        return {"response": f"Couldn't fetch upcoming events: {e}", "tool": "Calendar", "data": {}}
+
+
+def _handle_calendar_family():
+    try:
+        from backend.services.kindora_service import get_family_members
+        members = get_family_members()
+
+        if not members:
+            return {
+                "response": "## Family Members\n\nNo family members found in Kindora.",
+                "tool": "Calendar",
+                "data": [],
+            }
+
+        lines = [f"## Family Members ({len(members)})\n"]
+        for m in members:
+            lines.append(f"- **{m['name']}**")
+
+        return {"response": "\n".join(lines), "tool": "Calendar", "data": members}
+    except Exception as e:
+        return {"response": f"Couldn't fetch family members: {e}", "tool": "Calendar", "data": {}}
 
 
 # ── Finance fast-path handlers ────────────────────────────────────────────────

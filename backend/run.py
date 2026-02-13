@@ -16,6 +16,7 @@ if project_root not in sys.path:
     sys.path.insert(0, project_root)
 
 import os
+import backend.config  # noqa: F401 — loads .env into os.environ
 from backend.app import create_app, socketio
 
 app = create_app()

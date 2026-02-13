@@ -23,6 +23,7 @@ import { BudgetWidget } from './components/widgets/BudgetWidget';
 import { NetWorthTrendWidget } from './components/widgets/NetWorthTrendWidget';
 import { SpendingWidget } from './components/widgets/SpendingWidget';
 import { CashflowWidget } from './components/widgets/CashflowWidget';
+import { CalendarWidget } from './components/widgets/CalendarWidget';
 import { commandCategories } from './config/commandCategories';
 import { useChat } from './hooks/useChat';
 
@@ -43,6 +44,7 @@ const categoryTabs: Record<string, { id: string; label: string }[]> = {
     { id: 'widgets', label: 'Markets' },
   ],
   'family-calendar': [
+    { id: 'schedule', label: 'Schedule' },
     { id: 'commands', label: 'Calendar' },
     { id: 'widgets', label: 'Tasks & Notes' },
   ],
@@ -194,12 +196,12 @@ function Dashboard() {
               {/* ─── Dashboard ─────────────────────────────────── */}
               {activeCategory === 'dashboard' && activeTab === 'overview' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-[280px]">
+                  <div><CalendarWidget /></div>
                   <div><WeatherWidget /></div>
                   <div><StockWidget /></div>
                   <div><TodoWidget /></div>
                   <div><NotesWidget /></div>
                   <div><ContactsWidget /></div>
-                  <div><SystemMonitorWidget /></div>
                 </div>
               )}
 
@@ -268,6 +270,14 @@ function Dashboard() {
               )}
 
               {/* ─── Family Calendar ───────────────────────────── */}
+              {activeCategory === 'family-calendar' && activeTab === 'schedule' && (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-[320px]">
+                  <div><CalendarWidget /></div>
+                  <div><WeatherWidget /></div>
+                  <div><TodoWidget /></div>
+                </div>
+              )}
+
               {activeCategory === 'family-calendar' && activeTab === 'widgets' && (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-[280px]">
                   <div><TodoWidget /></div>

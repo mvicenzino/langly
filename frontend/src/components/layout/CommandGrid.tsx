@@ -43,7 +43,7 @@ const colorFocusMap: Record<string, string> = {
 
 interface Props {
   categoryId: string;
-  onRunCommand: (prompt: string) => void;
+  onRunCommand: (prompt: string, commandName: string) => void;
 }
 
 export function CommandGrid({ categoryId, onRunCommand }: Props) {
@@ -120,7 +120,7 @@ export function CommandGrid({ categoryId, onRunCommand }: Props) {
         {filtered.map((cmd: Command) => (
           <button
             key={cmd.id}
-            onClick={() => onRunCommand(cmd.prompt)}
+            onClick={() => onRunCommand(cmd.prompt, cmd.name)}
             className={`group text-left rounded-xl border ${borderColor} p-3.5 transition-all hover:bg-white/[0.02]`}
             style={{ background: 'rgba(15, 23, 42, 0.3)' }}
           >

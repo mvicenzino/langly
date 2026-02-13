@@ -58,3 +58,23 @@ export async function apiDelete<T>(path: string): Promise<T> {
   if (!res.ok) throw new Error(`DELETE ${path} failed: ${res.status}`);
   return res.json();
 }
+
+// ── Calendar (Kindora) ──────────────────────────────────────────────────────
+
+import type { CalendarEvent, FamilyMember } from '../types/calendar';
+
+export const calendarApi = {
+  getToday: () => apiGet<CalendarEvent[]>('/api/calendar/today'),
+  getUpcoming: (days = 7) => apiGet<CalendarEvent[]>(`/api/calendar/upcoming?days=${days}`),
+  getEvents: (start?: string, end?: string) => {
+    const params = new URLSearchParams();
+    if (start) params.set('start', start);
+    if (end) params.set('end', end);
+    const qs = params.toString();
+    return apiGet<CalendarEvent[]>(`/api/calendar/events${qs ? `?${qs}` : ''}`);
+  },
+  createEvent: (event: Partial<CalendarEvent>) => apiPost<CalendarEvent>('/api/calendar/events', event),
+  updateEvent: (id: string, data: Partial<CalendarEvent>) => apiPut<CalendarEvent>(`/api/calendar/events/${id}`, data),
+  deleteEvent: (id: string) => apiDelete<{ success: boolean }>(`/api/calendar/events/${id}`),
+  getMembers: () => apiGet<FamilyMember[]>('/api/calendar/members'),
+};

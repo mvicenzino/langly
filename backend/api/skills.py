@@ -5,30 +5,159 @@ skills_bp = Blueprint("skills", __name__)
 
 SKILLS = [
     {
-        "id": "ux-audit",
-        "name": "UX Design Audit",
-        "icon": "eye",
+        "id": "ai-operating-system",
+        "name": "30-Day AI Operating System",
+        "icon": "cpu",
         "color": "violet",
-        "category": "design",
-        "description": "Comprehensive UX/UI analysis with actionable recommendations",
+        "category": "AI Operating",
+        "description": "Master 30-day integration roadmap that transforms how you work with AI — from setup through advanced automation",
         "prompt": (
-            "Perform a thorough UX Design Audit. I'll provide a URL or describe an interface. "
-            "Analyze: information architecture, visual hierarchy, navigation patterns, "
-            "accessibility (WCAG), mobile responsiveness, interaction design, cognitive load, "
-            "error handling, and onboarding flow. "
-            "Provide a scored rubric (1-10) for each category, key findings with screenshots "
-            "descriptions, and a prioritized action plan. Format as a professional audit report."
+            "I want to build my 30-Day AI Operating System. Act as my AI integration architect. "
+            "Create a comprehensive 30-day roadmap divided into 4 phases: "
+            "Week 1 — Foundation (tool selection, workspace setup, prompt libraries), "
+            "Week 2 — Integration (workflow automation, data pipelines, team onboarding), "
+            "Week 3 — Optimization (performance tuning, custom agents, advanced prompting), "
+            "Week 4 — Mastery (autonomous workflows, measurement frameworks, scaling playbook). "
+            "For each day, provide: specific deliverable, time estimate, tools needed, and success metric. "
+            "Include templates, checklists, and example configurations. "
+            "Tailor to my role and industry for maximum relevance."
         ),
-        "inputLabel": "Enter URL or describe the interface to audit",
-        "inputPlaceholder": "https://example.com or describe the app/page...",
+        "inputLabel": "Describe your role, industry, and current AI usage",
+        "inputPlaceholder": "VP of Product at a B2B SaaS company, currently using ChatGPT for drafting...",
+        "timeSaved": "4-6 wks → 4-6 hrs",
+        "features": [
+            "4-phase structured roadmap",
+            "Daily deliverables & checklists",
+            "Tool selection framework",
+            "Measurement & ROI tracking",
+        ],
+    },
+    {
+        "id": "executive-insight-agent",
+        "name": "Executive Insight Agent",
+        "icon": "briefcase",
+        "color": "amber",
+        "category": "AI Operating",
+        "description": "Transforms raw data and observations into polished, board-ready executive memos and strategic briefings",
+        "prompt": (
+            "Act as my Executive Insight Agent. I'll provide raw data, meeting notes, or observations. "
+            "Transform them into a polished executive memo with: "
+            "Executive Summary (3-sentence overview), Key Insights (data-backed findings with implications), "
+            "Strategic Recommendations (prioritized actions with expected impact), "
+            "Risk Assessment (what could go wrong and mitigations), "
+            "Decision Framework (options matrix with trade-offs), "
+            "and Next Steps (specific actions, owners, timelines). "
+            "Use crisp executive language. Include data visualizations descriptions where relevant. "
+            "Format as a ready-to-present board document."
+        ),
+        "inputLabel": "Paste your raw data, notes, or observations",
+        "inputPlaceholder": "Q4 revenue was $2.3M, up 15% but churn increased to 8%...",
+        "timeSaved": "3-4 hrs → 45 min",
+        "features": [
+            "Board-ready formatting",
+            "Data-backed insights",
+            "Decision frameworks",
+            "Risk assessment matrices",
+        ],
+    },
+    {
+        "id": "decision-architecture",
+        "name": "Decision Architecture",
+        "icon": "target",
+        "color": "red",
+        "category": "AI Operating",
+        "description": "Builds rigorous financial models with Monte Carlo simulations, scenario analysis, and decision trees",
+        "prompt": (
+            "Act as my Decision Architect. I'll describe a business decision or investment scenario. "
+            "Build a comprehensive decision framework including: "
+            "Decision Tree (map all options, probabilities, and outcomes), "
+            "Financial Model (revenue projections, cost analysis, NPV/IRR calculations), "
+            "Monte Carlo Simulation (describe 1000-run probability distributions for key variables), "
+            "Scenario Analysis (best/base/worst cases with probability weights), "
+            "Sensitivity Analysis (which variables have the biggest impact), "
+            "Risk-Adjusted Returns (expected value calculations), "
+            "and Final Recommendation with confidence interval. "
+            "Show your work with clear assumptions and methodology."
+        ),
+        "inputLabel": "Describe the decision or investment scenario",
+        "inputPlaceholder": "Should we expand into the European market? Current ARR is $5M...",
+        "timeSaved": "2-3 days → 2-3 hrs",
+        "features": [
+            "Monte Carlo simulations",
+            "NPV/IRR calculations",
+            "Scenario & sensitivity analysis",
+            "Decision tree mapping",
+        ],
+    },
+    {
+        "id": "ai-product-architect",
+        "name": "AI Product Architect",
+        "icon": "rocket",
+        "color": "emerald",
+        "category": "AI Operating",
+        "description": "End-to-end AI product design from initial idea through detailed technical specification and launch plan",
+        "prompt": (
+            "Act as my AI Product Architect. I'll describe an AI product idea or feature. "
+            "Create a comprehensive product specification including: "
+            "Vision & Problem Statement (who, what, why), "
+            "AI/ML Architecture (model selection, training approach, inference pipeline), "
+            "Data Strategy (collection, labeling, storage, privacy), "
+            "User Experience Design (interaction patterns, feedback loops, edge cases), "
+            "Technical Specification (APIs, infrastructure, scalability requirements), "
+            "Evaluation Framework (metrics, A/B testing plan, success criteria), "
+            "Build vs Buy Analysis (for each AI component), "
+            "MVP Definition (minimum lovable product scope), "
+            "Go-to-Market (positioning, pricing, launch sequence), "
+            "and Risk Mitigation (bias, hallucination, safety guardrails). "
+            "Format as a ready-to-execute product spec."
+        ),
+        "inputLabel": "Describe your AI product or feature idea",
+        "inputPlaceholder": "An AI assistant that helps sales reps prepare for calls by analyzing...",
+        "timeSaved": "2-4 wks → 3-4 hrs",
+        "features": [
+            "AI/ML architecture design",
+            "Data strategy & privacy",
+            "MVP scoping & launch plan",
+            "Evaluation & safety frameworks",
+        ],
+    },
+    {
+        "id": "operating-system-architect",
+        "name": "Operating System Architect",
+        "icon": "cpu",
+        "color": "blue",
+        "category": "AI Operating",
+        "description": "Designs your weekly AI-delegation cadence — what to automate, delegate, and personally execute",
+        "prompt": (
+            "Act as my Operating System Architect. I'll describe my role, responsibilities, and weekly schedule. "
+            "Design a comprehensive weekly AI-delegation operating system including: "
+            "Time Audit (categorize current activities by value and AI-delegability), "
+            "Delegation Matrix (what to fully automate / AI-assist / personally do), "
+            "Weekly Cadence (Mon-Fri structured blocks with AI touchpoints), "
+            "AI Agent Assignments (which AI handles what, with specific prompts), "
+            "Automation Workflows (triggers, actions, and handoff points), "
+            "Decision Protocols (when AI decides vs when you decide), "
+            "Communication Templates (AI-drafted comms for common scenarios), "
+            "and Measurement Dashboard (hours saved, quality metrics, ROI). "
+            "Make it immediately actionable starting next Monday."
+        ),
+        "inputLabel": "Describe your role and typical weekly responsibilities",
+        "inputPlaceholder": "I'm a CTO managing 3 engineering teams, weekly board prep, hiring...",
+        "timeSaved": "8-10 hrs/wk saved",
+        "features": [
+            "Weekly cadence design",
+            "AI delegation matrix",
+            "Automation workflows",
+            "Hours-saved tracking",
+        ],
     },
     {
         "id": "business-plan",
-        "name": "Business Plan Generator",
+        "name": "Business Plan",
         "icon": "briefcase",
         "color": "amber",
-        "category": "strategy",
-        "description": "Full business plan with market analysis, financials, and go-to-market",
+        "category": "Strategy & Business",
+        "description": "Generates comprehensive strategic business plans with market analysis, financials, and go-to-market strategy",
         "prompt": (
             "Generate a comprehensive business plan. I'll describe the business idea. "
             "Include: Executive Summary, Problem Statement, Solution & Value Proposition, "
@@ -40,14 +169,21 @@ SKILLS = [
         ),
         "inputLabel": "Describe your business idea",
         "inputPlaceholder": "An AI-powered platform that...",
+        "timeSaved": "3-5 days → 3-4 hrs",
+        "features": [
+            "TAM/SAM/SOM analysis",
+            "3-year financial projections",
+            "Competitive positioning matrix",
+            "Go-to-market playbook",
+        ],
     },
     {
-        "id": "market-research",
-        "name": "Deep Market Research",
+        "id": "market-intelligence",
+        "name": "Market Intelligence",
         "icon": "search",
         "color": "cyan",
-        "category": "research",
-        "description": "In-depth market analysis with trends, competitors, and opportunities",
+        "category": "Strategy & Business",
+        "description": "Produces professional market research reports with trends, competitive landscape, and strategic opportunities",
         "prompt": (
             "Conduct deep market research on the topic I provide. "
             "Cover: Market Size & Growth (TAM/SAM/SOM with sources), "
@@ -55,111 +191,106 @@ SKILLS = [
             "Customer Segments & Personas, Regulatory Environment, "
             "Technology Trends & Disruption Vectors, Investment & M&A Activity, "
             "SWOT Analysis, Market Entry Barriers, and 5-Year Outlook. "
-            "Use real data and cite sources. Include data visualizations descriptions."
+            "Use real data and cite sources. Include data visualizations descriptions. "
+            "Format as a professional market research report ready for stakeholder review."
         ),
         "inputLabel": "What market or industry to research?",
-        "inputPlaceholder": "AI agents for enterprise, fintech in LATAM...",
+        "inputPlaceholder": "AI agents for enterprise, fintech in LATAM, EV charging infrastructure...",
+        "timeSaved": "1-2 wks → 2-3 hrs",
+        "features": [
+            "Top 10 competitor analysis",
+            "Market sizing with sources",
+            "Investment & M&A trends",
+            "5-year market outlook",
+        ],
     },
     {
-        "id": "competitive-intel",
-        "name": "Competitive Intelligence",
-        "icon": "target",
-        "color": "red",
-        "category": "strategy",
-        "description": "Deep competitive analysis with positioning and strategic recommendations",
-        "prompt": (
-            "Build a competitive intelligence report. I'll name the company or product space. "
-            "Analyze: Direct & indirect competitors, feature comparison matrix, "
-            "pricing analysis, market positioning map, technology stack comparison, "
-            "go-to-market strategies, funding history, team & leadership, "
-            "customer reviews & sentiment, strengths/weaknesses, and strategic recommendations. "
-            "Present as an actionable intelligence brief."
-        ),
-        "inputLabel": "Company or product space to analyze",
-        "inputPlaceholder": "Notion vs Confluence, or a specific company...",
-    },
-    {
-        "id": "product-strategy",
-        "name": "Product Strategy Brief",
-        "icon": "rocket",
-        "color": "emerald",
-        "category": "product",
-        "description": "Product strategy document with roadmap and success metrics",
-        "prompt": (
-            "Create a product strategy brief. I'll describe the product or feature. "
-            "Include: Vision & Mission, User Problems (Jobs-to-be-Done framework), "
-            "Success Metrics (North Star + supporting KPIs), Feature Prioritization "
-            "(RICE or ICE scoring), User Journey Map, Technical Feasibility Assessment, "
-            "MVP Definition, 90-Day Roadmap, Resource Requirements, "
-            "Risk Assessment, and Competitive Differentiation. "
-            "Format as a ready-to-present strategy document."
-        ),
-        "inputLabel": "Describe the product or feature",
-        "inputPlaceholder": "A dashboard for tracking customer health scores...",
-    },
-    {
-        "id": "tech-architecture",
-        "name": "Architecture Review",
-        "icon": "cpu",
-        "color": "blue",
-        "category": "engineering",
-        "description": "Technical architecture design or review with diagrams and trade-offs",
-        "prompt": (
-            "Perform a technical architecture review or design. I'll describe the system. "
-            "Cover: System Overview & Context Diagram, Component Architecture, "
-            "Data Flow & Storage Design, API Design (REST/GraphQL/gRPC), "
-            "Scalability Analysis (horizontal/vertical, bottlenecks), "
-            "Security Architecture (auth, encryption, OWASP), "
-            "Infrastructure & Deployment (cloud, containers, CI/CD), "
-            "Monitoring & Observability, Cost Estimation, "
-            "Trade-offs & Alternatives, and Migration Path (if applicable). "
-            "Include ASCII architecture diagrams."
-        ),
-        "inputLabel": "Describe the system or architecture",
-        "inputPlaceholder": "Real-time analytics pipeline processing 1M events/sec...",
-    },
-    {
-        "id": "resume-optimizer",
-        "name": "Resume Optimizer",
+        "id": "stride-news-articles",
+        "name": "Stride News Articles",
         "icon": "user",
         "color": "purple",
-        "category": "career",
-        "description": "ATS-optimized resume tailoring for specific job descriptions",
+        "category": "Content & Communication",
+        "description": "Crafts long-form thought leadership articles with compelling narratives, data-backed insights, and SEO optimization",
         "prompt": (
-            "Optimize my resume for a specific job. I'll provide the job description "
-            "and optionally my current resume. "
-            "Analyze: Keyword matching & ATS optimization score, "
-            "skills gap analysis, achievement quantification improvements, "
-            "bullet point rewrites with STAR method, "
-            "professional summary optimization, "
-            "section ordering recommendations, "
-            "formatting & readability improvements, "
-            "and a final optimized version. "
-            "Score before and after (0-100)."
+            "Act as my thought leadership ghostwriter. I'll provide a topic and key points. "
+            "Create a long-form article (1500-2500 words) with: "
+            "Compelling Headline (attention-grabbing, SEO-friendly), "
+            "Hook Opening (provocative stat, story, or question), "
+            "Thesis Statement (clear point of view), "
+            "Structured Argument (3-5 supporting sections with data and examples), "
+            "Expert Insights (industry context and forward-looking analysis), "
+            "Practical Takeaways (actionable advice for the reader), "
+            "Strong Conclusion (call to action or thought-provoking close), "
+            "and SEO Elements (meta description, suggested tags, internal link opportunities). "
+            "Write in a confident, executive voice. Blend personal insight with industry data."
         ),
-        "inputLabel": "Paste the job description (and optionally your resume)",
-        "inputPlaceholder": "Job Title: VP of Product at...",
+        "inputLabel": "What's the article topic and your key points?",
+        "inputPlaceholder": "Why AI agents will replace SaaS dashboards — key points: decision fatigue, real-time...",
+        "timeSaved": "6-8 hrs → 1-2 hrs",
+        "features": [
+            "SEO-optimized structure",
+            "Data-backed arguments",
+            "Executive voice & tone",
+            "Ready-to-publish format",
+        ],
     },
     {
-        "id": "data-analysis",
-        "name": "Data Analysis",
+        "id": "weekly-content-creator",
+        "name": "Weekly Content Creator",
         "icon": "chart",
         "color": "teal",
-        "category": "analytics",
-        "description": "Statistical analysis and insights from data descriptions",
+        "category": "Content & Communication",
+        "description": "Generates a full week of LinkedIn and X/Twitter posts with hooks, threads, and engagement optimization",
         "prompt": (
-            "Perform a data analysis. I'll describe the dataset or paste data. "
-            "Provide: Data Overview & Quality Assessment, "
-            "Descriptive Statistics, Distribution Analysis, "
-            "Correlation & Pattern Discovery, Trend Analysis, "
-            "Anomaly Detection, Hypothesis Testing (if applicable), "
-            "Segmentation & Clustering insights, "
-            "Predictive Indicators, Visualization Recommendations, "
-            "and Executive Summary with actionable insights. "
-            "Use statistical rigor and explain methodology."
+            "Act as my social media content strategist. I'll share my expertise areas and recent work. "
+            "Create a full week of content (Monday-Friday) for LinkedIn and X/Twitter including: "
+            "Monday — Industry Insight (thought leadership post with a hot take), "
+            "Tuesday — How-To Thread (5-7 tweet thread breaking down a process), "
+            "Wednesday — Personal Story (authentic narrative with business lesson), "
+            "Thursday — Data/Research Share (compelling stat with analysis), "
+            "Friday — Weekend Reflection (community-building question or retrospective). "
+            "For each day provide: LinkedIn version (longer form) and X version (concise + thread). "
+            "Include hashtag strategy, optimal posting times, engagement hooks, "
+            "and CTA variations. Optimize for algorithm reach and genuine engagement."
         ),
-        "inputLabel": "Describe or paste your data",
-        "inputPlaceholder": "Monthly revenue data for the past 2 years...",
+        "inputLabel": "What are your expertise areas and recent wins/insights?",
+        "inputPlaceholder": "AI strategy consultant, just helped a client 3x their pipeline using agents...",
+        "timeSaved": "4-5 hrs → 45 min",
+        "features": [
+            "5-day content calendar",
+            "LinkedIn + X/Twitter formats",
+            "Engagement hook formulas",
+            "Hashtag & timing strategy",
+        ],
+    },
+    {
+        "id": "website-ux-audit",
+        "name": "Website UX Audit",
+        "icon": "eye",
+        "color": "violet",
+        "category": "Design & UX",
+        "description": "Comprehensive UX design review with scored rubrics, accessibility checks, and prioritized action plan",
+        "prompt": (
+            "Perform a thorough UX Design Audit. I'll provide a URL or describe an interface. "
+            "Analyze: Information Architecture, Visual Hierarchy, Navigation Patterns, "
+            "Accessibility (WCAG 2.1 AA compliance), Mobile Responsiveness, "
+            "Interaction Design & Micro-interactions, Cognitive Load Assessment, "
+            "Error Handling & Recovery, Onboarding Flow, "
+            "Performance Perception (loading states, skeleton screens), "
+            "and Conversion Optimization. "
+            "Provide a scored rubric (1-10) for each category, key findings with severity ratings, "
+            "and a prioritized action plan with estimated impact. "
+            "Format as a professional UX audit report."
+        ),
+        "inputLabel": "Enter URL or describe the interface to audit",
+        "inputPlaceholder": "https://example.com or describe the app/page...",
+        "timeSaved": "2-3 days → 2-3 hrs",
+        "features": [
+            "Scored UX rubric (1-10)",
+            "WCAG accessibility check",
+            "Conversion optimization",
+            "Prioritized action plan",
+        ],
     },
 ]
 

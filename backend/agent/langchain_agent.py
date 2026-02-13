@@ -652,6 +652,75 @@ def json_formatter(input_str: str) -> str:
 
 
 # =====================
+# PERSONAL FINANCE
+# =====================
+
+def monarch_finance(query: str) -> str:
+    """Query personal finance data from Monarch Money. Routes on keywords."""
+    try:
+        from backend.services.monarch_service import (
+            get_accounts, get_transactions, get_budgets, get_cashflow, get_recurring,
+        )
+        q = query.lower().strip()
+
+        # Recurring / subscriptions
+        if any(w in q for w in ("recurring", "subscription", "bill")):
+            items = get_recurring()
+            if not items:
+                return "No recurring transactions found."
+            lines = ["Recurring Transactions:"]
+            total = 0.0
+            for r in items:
+                lines.append(f"- {r['name']}: ${r['amount']:.2f}/{r['frequency']} ({r['category']})")
+                total += r["amount"]
+            lines.append(f"\nTotal recurring: ${total:.2f}/month")
+            return "\n".join(lines)
+
+        # Budgets / spending
+        if any(w in q for w in ("budget", "spending", "expense")):
+            data = get_budgets()
+            lines = [f"Monthly Budget — Spent ${data['totalSpent']:,.2f} of ${data['totalBudgeted']:,.2f} "
+                     f"(${data['totalRemaining']:,.2f} remaining)"]
+            for c in data["categories"][:10]:
+                lines.append(f"- {c['category']}: ${c['spent']:,.2f} / ${c['budgeted']:,.2f} ({c['percentUsed']:.0f}%)")
+            return "\n".join(lines)
+
+        # Cashflow / income / savings
+        if any(w in q for w in ("cashflow", "cash flow", "income", "saving")):
+            cf = get_cashflow()
+            return (f"Cash Flow (Last 30 Days):\n"
+                    f"- Income: ${cf['income']:,.2f}\n"
+                    f"- Expenses: ${cf['expenses']:,.2f}\n"
+                    f"- Savings: ${cf['savings']:,.2f} ({cf['savingsRate']:.1f}% savings rate)")
+
+        # Transactions
+        if any(w in q for w in ("transaction", "recent", "charge", "purchase", "bought", "spent")):
+            txns = get_transactions(limit=15)
+            if not txns:
+                return "No recent transactions found."
+            lines = ["Recent Transactions:"]
+            for t in txns:
+                sign = "+" if t["amount"] > 0 else "-"
+                lines.append(f"- {t['date']} | {t['merchant']} | {t['category']} | {sign}${abs(t['amount']):,.2f}")
+            return "\n".join(lines)
+
+        # Default: accounts + net worth
+        data = get_accounts()
+        lines = [f"Net Worth: ${data['netWorth']:,.2f}",
+                 f"Assets: ${data['totalAssets']:,.2f} | Liabilities: ${data['totalLiabilities']:,.2f}",
+                 ""]
+        for type_name, accts in data["accountsByType"].items():
+            lines.append(f"{type_name}:")
+            for a in accts:
+                inst = f" ({a['institution']})" if a.get("institution") else ""
+                lines.append(f"  - {a['name']}{inst}: ${a['balance']:,.2f}")
+        return "\n".join(lines)
+
+    except Exception as e:
+        return f"Finance error: {e}"
+
+
+# =====================
 # TOOL REGISTRY
 # =====================
 
@@ -717,6 +786,12 @@ tools = [
          description="Run Docker commands. Input: docker command (e.g., ps, images, logs)."),
     Tool(name="FormatJSON", func=json_formatter,
          description="Format and validate JSON. Input: raw JSON string or file path."),
+    # --- Personal Finance ---
+    Tool(name="PersonalFinance", func=monarch_finance,
+         description="Query personal finance data from Monarch Money. "
+                     "Handles: accounts/balances/net worth, transactions/spending, "
+                     "budgets, cashflow/income/savings, recurring/subscriptions. "
+                     "Input: a natural language query about finances."),
 ]
 
 # Set up the LLM

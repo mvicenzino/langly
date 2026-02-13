@@ -1,45 +1,34 @@
-import type { MutableRefObject } from 'react';
-import { useEffect, useState } from 'react';
-import { useChat } from '../../hooks/useChat';
+import { useState } from 'react';
+import type { ChatMessage } from '../../types/chat';
+import type { ChatSession } from '../../api/chat';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { WidgetPanel } from '../layout/WidgetPanel';
 
 interface Props {
-  onChatDone?: () => void;
-  onSendRef?: MutableRefObject<((msg: string) => void) | null>;
+  messages: ChatMessage[];
+  isLoading: boolean;
+  sendMessage: (msg: string) => void;
+  clearMessages: () => void;
+  sessions: ChatSession[];
+  activeSessionId: number | null;
+  startNewSession: () => void;
+  switchSession: (id: number) => void;
+  deleteSession: (id: number) => void;
 }
 
-export function ChatPanel({ onChatDone, onSendRef }: Props) {
-  const {
-    messages,
-    isLoading,
-    sendMessage,
-    clearMessages,
-    sessions,
-    activeSessionId,
-    startNewSession,
-    switchSession,
-    deleteSession,
-  } = useChat();
+export function ChatPanel({
+  messages,
+  isLoading,
+  sendMessage,
+  clearMessages,
+  sessions,
+  activeSessionId,
+  startNewSession,
+  switchSession,
+  deleteSession,
+}: Props) {
   const [showHistory, setShowHistory] = useState(false);
-
-  // Expose sendMessage to parent via ref so skills can inject prompts
-  useEffect(() => {
-    if (onSendRef) {
-      onSendRef.current = sendMessage;
-    }
-  }, [onSendRef, sendMessage]);
-
-  const lastMsg = messages[messages.length - 1];
-  const prevStreamingRef = { current: true };
-  if (lastMsg && !lastMsg.isStreaming && prevStreamingRef.current) {
-    prevStreamingRef.current = false;
-    onChatDone?.();
-  }
-  if (lastMsg?.isStreaming) {
-    prevStreamingRef.current = true;
-  }
 
   return (
     <WidgetPanel

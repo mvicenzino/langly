@@ -8,4 +8,6 @@ export interface Skill {
   prompt: string;
   inputLabel: string;
   inputPlaceholder: string;
+  timeSaved?: string;
+  features?: string[];
 }

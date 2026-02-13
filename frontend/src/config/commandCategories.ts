@@ -46,12 +46,12 @@ export const commandCategories: CommandCategory[] = [
     icon: 'calendar',
     color: 'blue',
     commands: [
-      { id: 'today-agenda', name: "Today's Agenda", prompt: 'What\'s on the family agenda today? Consider: Sebby\'s school/activities, Carolyn\'s schedule at RWJ Barnabas, any of my meetings or networking calls, upcoming baby prep items. Help me time-block and prioritize the day.' },
-      { id: 'week-overview', name: 'Week Overview', prompt: 'Help me plan this week for the whole family. Factor in: Sebby\'s school schedule and activities, Carolyn\'s work at RWJ Barnabas, my job search activities and networking, any prenatal appointments, Jax\'s needs, and family time. Suggest a balanced schedule.' },
-      { id: 'add-event', name: 'Add Family Event', prompt: 'Help me add a family event. Ask me for: event name, date/time, location, who\'s involved (me, Carolyn, Sebby, Jax?), any prep needed. Consider our Morristown NJ location for logistics.' },
-      { id: 'sebby-schedule', name: "Sebby's Schedule", prompt: 'Help me manage Sebastian\'s schedule. He\'s 4 years old. Review: school/preschool times, activities, playdates, any upcoming school events. Help me make sure his routine is solid and age-appropriate.' },
+      { id: 'today-agenda', name: "Today's Agenda", prompt: 'Check my Kindora family calendar and tell me what\'s on the family agenda today. Show all events with times, who\'s involved, and any notes. Then help me time-block and prioritize the day.' },
+      { id: 'week-overview', name: 'Week Overview', prompt: 'Check my Kindora family calendar for the next 7 days. Show all upcoming events organized by day. Factor in: Sebby\'s school schedule and activities, Carolyn\'s work at RWJ Barnabas, my job search activities, and family time. Suggest a balanced schedule.' },
+      { id: 'add-event', name: 'Add Family Event', prompt: 'Help me add a family event to the Kindora calendar. Ask me for: event name, date/time, who\'s involved (me, Carolyn, Sebby, Jax?), and description. Then create it on the calendar.' },
+      { id: 'sebby-schedule', name: "Sebby's Schedule", prompt: 'Check the Kindora family calendar for any events involving Sebby (Sebastian). Show his upcoming schedule including school/preschool times, activities, playdates, any upcoming school events. Help me make sure his routine is solid.' },
       { id: 'baby-prep', name: 'Baby Prep Tracker', prompt: 'Help me track baby preparation. Carolyn is pregnant. Walk me through what we still need: nursery setup, supplies, hospital bag, pediatrician selection, Sebby preparation (big brother transition), Jax adjustment plan, insurance updates, leave planning. Create a priority checklist of what to tackle this week.' },
-      { id: 'appointment-check', name: 'Appointment Reminders', prompt: 'Review upcoming appointments for the whole family: prenatal visits for Carolyn, Sebby\'s pediatrician/dentist, Jax\'s vet visits, any of my medical appointments, home maintenance. Flag anything in the next 14 days.' },
+      { id: 'appointment-check', name: 'Appointment Reminders', prompt: 'Check my Kindora family calendar for upcoming appointments in the next 14 days. Look for: prenatal visits for Carolyn, Sebby\'s pediatrician/dentist, Jax\'s vet visits, any medical appointments, home maintenance. Flag anything coming up soon.' },
     ],
   },
   {
