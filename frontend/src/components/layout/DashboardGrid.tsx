@@ -1,33 +1,32 @@
 import type { ReactNode } from 'react';
+import { useCallback } from 'react';
 import { ResponsiveGridLayout, useContainerWidth, verticalCompactor } from 'react-grid-layout';
-import type { Layout, LayoutItem } from 'react-grid-layout';
+import type { Layout, ResponsiveLayouts } from 'react-grid-layout';
 import { useLayoutStore } from '../../store/layoutStore';
+import { PAGE_LAYOUTS } from '../../config/widgetLayouts';
 
 interface Props {
+  pageId: string;
   children: ReactNode;
 }
 
-// Panels that go left in medium layout
-const leftPanels = new Set(['stocks', 'todos', 'skills', 'openclaw']);
+type BK = 'lg' | 'md' | 'sm';
 
-export function DashboardGrid({ children }: Props) {
-  const layouts = useLayoutStore((s) => s.layouts);
-  const setLayouts = useLayoutStore((s) => s.setLayouts);
+export function WidgetGrid({ pageId, children }: Props) {
+  const getPageLayouts = useLayoutStore((s) => s.getPageLayouts);
+  const setPageLayouts = useLayoutStore((s) => s.setPageLayouts);
   const { width, containerRef, mounted } = useContainerWidth();
 
-  const responsiveLayouts = {
-    lg: layouts as Layout,
-    md: layouts.map((l: LayoutItem) => ({
-      ...l,
-      w: l.i === 'chat' ? 12 : 6,
-      x: l.i === 'chat' ? 0 : leftPanels.has(l.i) ? 0 : 6,
-    })) as Layout,
-    sm: layouts.map((l: LayoutItem) => ({ ...l, w: 12, x: 0 })) as Layout,
-  };
+  const pageConfig = PAGE_LAYOUTS[pageId];
+  const rowHeight = pageConfig?.rowHeight ?? 61;
+  const layouts = getPageLayouts(pageId);
 
-  function handleLayoutChange(layout: Layout) {
-    setLayouts([...layout] as LayoutItem[]);
-  }
+  const handleLayoutChange = useCallback(
+    (_layout: Layout, allLayouts: ResponsiveLayouts<BK>) => {
+      setPageLayouts(pageId, allLayouts);
+    },
+    [pageId, setPageLayouts]
+  );
 
   return (
     <div ref={containerRef}>
@@ -35,10 +34,10 @@ export function DashboardGrid({ children }: Props) {
         <ResponsiveGridLayout
           className="layout"
           width={width}
-          layouts={responsiveLayouts}
-          breakpoints={{ lg: 1200, md: 768, sm: 0 }}
+          layouts={layouts}
+          breakpoints={{ lg: 1280, md: 768, sm: 0 }}
           cols={{ lg: 12, md: 12, sm: 12 }}
-          rowHeight={60}
+          rowHeight={rowHeight}
           dragConfig={{ handle: '.widget-drag-handle' }}
           onLayoutChange={handleLayoutChange}
           compactor={verticalCompactor}

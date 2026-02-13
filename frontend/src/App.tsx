@@ -8,6 +8,7 @@ import { CommandGrid } from './components/layout/CommandGrid';
 import { SkillsPanel } from './components/layout/SkillsPanel';
 import { MainContentPanel } from './components/layout/MainContentPanel';
 import { SettingsPanel } from './components/layout/SettingsPanel';
+import { WidgetGrid } from './components/layout/DashboardGrid';
 import { ChatPanel } from './components/chat/ChatPanel';
 import { StockWidget } from './components/widgets/StockWidget';
 import { WeatherWidget } from './components/widgets/WeatherWidget';
@@ -52,10 +53,6 @@ const categoryTabs: Record<string, { id: string; label: string }[]> = {
     { id: 'commands', label: 'Wellness Tools' },
     { id: 'widgets', label: 'Tracking' },
   ],
-  'home-management': [
-    { id: 'commands', label: 'Home Tools' },
-    { id: 'widgets', label: 'Status' },
-  ],
   'travel-planning': [
     { id: 'commands', label: 'Travel Tools' },
     { id: 'widgets', label: 'Weather & Info' },
@@ -64,17 +61,9 @@ const categoryTabs: Record<string, { id: string; label: string }[]> = {
     { id: 'commands', label: 'Education Tools' },
     { id: 'widgets', label: 'Schedule' },
   ],
-  entertainment: [
-    { id: 'commands', label: 'Entertainment' },
-    { id: 'widgets', label: 'Notes' },
-  ],
   'career-growth': [
     { id: 'commands', label: 'Career Tools' },
     { id: 'widgets', label: 'Network & Market' },
-  ],
-  'emergency-safety': [
-    { id: 'commands', label: 'Emergency Tools' },
-    { id: 'widgets', label: 'Status' },
   ],
   'claude-skills': [
     { id: 'skills', label: 'My Skills' },
@@ -195,28 +184,28 @@ function Dashboard() {
             <div className="flex-1 overflow-y-auto p-4">
               {/* ─── Dashboard ─────────────────────────────────── */}
               {activeCategory === 'dashboard' && activeTab === 'overview' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-[280px]">
-                  <div><CalendarWidget /></div>
-                  <div><WeatherWidget /></div>
-                  <div><StockWidget /></div>
-                  <div><TodoWidget /></div>
-                  <div><NotesWidget /></div>
-                  <div><ContactsWidget /></div>
-                </div>
+                <WidgetGrid pageId="dashboard-overview">
+                  <div key="calendar"><CalendarWidget /></div>
+                  <div key="weather"><WeatherWidget /></div>
+                  <div key="stocks"><StockWidget /></div>
+                  <div key="todos"><TodoWidget /></div>
+                  <div key="notes"><NotesWidget /></div>
+                  <div key="contacts"><ContactsWidget /></div>
+                </WidgetGrid>
               )}
 
               {activeCategory === 'dashboard' && activeTab === 'activity' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 auto-rows-[400px]">
-                  <div><ActivityWidget /></div>
-                  <div><TodoWidget /></div>
-                </div>
+                <WidgetGrid pageId="dashboard-activity">
+                  <div key="activity"><ActivityWidget /></div>
+                  <div key="todos"><TodoWidget /></div>
+                </WidgetGrid>
               )}
 
               {activeCategory === 'dashboard' && activeTab === 'monitoring' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 auto-rows-[320px]">
-                  <div><SystemWidget /></div>
-                  <div><SystemMonitorWidget /></div>
-                </div>
+                <WidgetGrid pageId="dashboard-monitoring">
+                  <div key="system"><SystemWidget /></div>
+                  <div key="system-monitor"><SystemMonitorWidget /></div>
+                </WidgetGrid>
               )}
 
               {/* ─── Claude Skills ────────────────────────────── */}
@@ -243,107 +232,82 @@ function Dashboard() {
 
               {/* ─── Daily Briefs ──────────────────────────────── */}
               {activeCategory === 'daily-briefs' && activeTab === 'widgets' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-[280px]">
-                  <div><WeatherWidget /></div>
-                  <div><StockWidget /></div>
-                  <div><ActivityWidget /></div>
-                </div>
+                <WidgetGrid pageId="daily-briefs-widgets">
+                  <div key="weather"><WeatherWidget /></div>
+                  <div key="stocks"><StockWidget /></div>
+                  <div key="activity"><ActivityWidget /></div>
+                </WidgetGrid>
               )}
 
               {/* ─── Personal Finance ──────────────────────────── */}
               {activeCategory === 'personal-finance' && activeTab === 'finances' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-[320px]">
-                  <div><NetWorthWidget /></div>
-                  <div><NetWorthTrendWidget /></div>
-                  <div><CashflowWidget /></div>
-                  <div><SpendingWidget /></div>
-                  <div><TransactionsWidget /></div>
-                  <div><BudgetWidget /></div>
-                </div>
+                <WidgetGrid pageId="personal-finance-finances">
+                  <div key="net-worth"><NetWorthWidget /></div>
+                  <div key="net-worth-trend"><NetWorthTrendWidget /></div>
+                  <div key="cashflow"><CashflowWidget /></div>
+                  <div key="spending"><SpendingWidget /></div>
+                  <div key="transactions"><TransactionsWidget /></div>
+                  <div key="budget"><BudgetWidget /></div>
+                </WidgetGrid>
               )}
 
               {activeCategory === 'personal-finance' && activeTab === 'widgets' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 auto-rows-[320px]">
-                  <div><StockWidget /></div>
-                  <div><ActivityWidget /></div>
-                </div>
+                <WidgetGrid pageId="personal-finance-widgets">
+                  <div key="stocks"><StockWidget /></div>
+                  <div key="activity"><ActivityWidget /></div>
+                </WidgetGrid>
               )}
 
               {/* ─── Family Calendar ───────────────────────────── */}
               {activeCategory === 'family-calendar' && activeTab === 'schedule' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-[320px]">
-                  <div><CalendarWidget /></div>
-                  <div><WeatherWidget /></div>
-                  <div><TodoWidget /></div>
-                </div>
+                <WidgetGrid pageId="family-calendar-schedule">
+                  <div key="calendar"><CalendarWidget /></div>
+                  <div key="weather"><WeatherWidget /></div>
+                  <div key="todos"><TodoWidget /></div>
+                </WidgetGrid>
               )}
 
               {activeCategory === 'family-calendar' && activeTab === 'widgets' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-[280px]">
-                  <div><TodoWidget /></div>
-                  <div><NotesWidget /></div>
-                  <div><WeatherWidget /></div>
-                </div>
+                <WidgetGrid pageId="family-calendar-widgets">
+                  <div key="todos"><TodoWidget /></div>
+                  <div key="notes"><NotesWidget /></div>
+                  <div key="weather"><WeatherWidget /></div>
+                </WidgetGrid>
               )}
 
               {/* ─── Health & Wellness ─────────────────────────── */}
               {activeCategory === 'health-wellness' && activeTab === 'widgets' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 auto-rows-[280px]">
-                  <div><TodoWidget /></div>
-                  <div><WeatherWidget /></div>
-                </div>
-              )}
-
-              {/* ─── Home Management ───────────────────────────── */}
-              {activeCategory === 'home-management' && activeTab === 'widgets' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-[280px]">
-                  <div><TodoWidget /></div>
-                  <div><WeatherWidget /></div>
-                  <div><SystemWidget /></div>
-                </div>
+                <WidgetGrid pageId="health-wellness-widgets">
+                  <div key="todos"><TodoWidget /></div>
+                  <div key="weather"><WeatherWidget /></div>
+                </WidgetGrid>
               )}
 
               {/* ─── Travel Planning ───────────────────────────── */}
               {activeCategory === 'travel-planning' && activeTab === 'widgets' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 auto-rows-[280px]">
-                  <div><WeatherWidget /></div>
-                  <div><NotesWidget /></div>
-                </div>
+                <WidgetGrid pageId="travel-planning-widgets">
+                  <div key="weather"><WeatherWidget /></div>
+                  <div key="notes"><NotesWidget /></div>
+                </WidgetGrid>
               )}
 
               {/* ─── Kids & Education ──────────────────────────── */}
               {activeCategory === 'kids-education' && activeTab === 'widgets' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 auto-rows-[280px]">
-                  <div><TodoWidget /></div>
-                  <div><NotesWidget /></div>
-                </div>
-              )}
-
-              {/* ─── Entertainment ─────────────────────────────── */}
-              {activeCategory === 'entertainment' && activeTab === 'widgets' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 auto-rows-[280px]">
-                  <div><NotesWidget /></div>
-                  <div><ActivityWidget /></div>
-                </div>
+                <WidgetGrid pageId="kids-education-widgets">
+                  <div key="todos"><TodoWidget /></div>
+                  <div key="notes"><NotesWidget /></div>
+                </WidgetGrid>
               )}
 
               {/* ─── Career Growth ─────────────────────────────── */}
               {activeCategory === 'career-growth' && activeTab === 'widgets' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-[280px]">
-                  <div><ContactsWidget /></div>
-                  <div><NotesWidget /></div>
-                  <div><StockWidget /></div>
-                </div>
+                <WidgetGrid pageId="career-growth-widgets">
+                  <div key="contacts"><ContactsWidget /></div>
+                  <div key="notes"><NotesWidget /></div>
+                  <div key="stocks"><StockWidget /></div>
+                </WidgetGrid>
               )}
 
-              {/* ─── Emergency & Safety ────────────────────────── */}
-              {activeCategory === 'emergency-safety' && activeTab === 'widgets' && (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3 auto-rows-[280px]">
-                  <div><WeatherWidget /></div>
-                  <div><SystemWidget /></div>
-                  <div><TodoWidget /></div>
-                </div>
-              )}
             </div>
           </div>
 
