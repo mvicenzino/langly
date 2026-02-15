@@ -31,7 +31,6 @@ import { UltrasoundWidget } from './components/widgets/UltrasoundWidget';
 import { TripPlannerWidget } from './components/widgets/TripPlannerWidget';
 import { FlightSearchWidget } from './components/widgets/FlightSearchWidget';
 import { HotelSearchWidget } from './components/widgets/HotelSearchWidget';
-import { PackingChecklistWidget } from './components/widgets/PackingChecklistWidget';
 import { ContentCalendar } from './components/layout/ContentCalendar';
 import { DailyBriefView } from './components/views/DailyBriefView';
 import { commandCategories } from './config/commandCategories';
@@ -335,7 +334,6 @@ function Dashboard() {
                             <div key="weather"><WeatherWidget /></div>
                             <div key="flight-search"><FlightSearchWidget /></div>
                             <div key="hotel-search"><HotelSearchWidget /></div>
-                            <div key="packing-checklist"><PackingChecklistWidget /></div>
                           </WidgetGrid>
                         )}
 

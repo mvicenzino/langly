@@ -94,8 +94,7 @@ export const PAGE_LAYOUTS: Record<string, PageLayout> = {
       { i: 'trip-planner', x: 0, y: 0, w: 8, h: 5, minW: 4, minH: 4 },
       { i: 'weather', x: 8, y: 0, w: 4, h: 5, minW: 3, minH: 3 },
       { i: 'flight-search', x: 0, y: 5, w: 6, h: 8, minW: 4, minH: 5 },
-      { i: 'hotel-search', x: 6, y: 5, w: 6, h: 5, minW: 4, minH: 4 },
-      { i: 'packing-checklist', x: 0, y: 13, w: 12, h: 6, minW: 6, minH: 4 },
+      { i: 'hotel-search', x: 6, y: 5, w: 6, h: 8, minW: 4, minH: 4 },
     ]),
   },
 };

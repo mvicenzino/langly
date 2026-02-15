@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useTrips } from '../../hooks/useTrips';
 import { useTravelStore } from '../../store/travelStore';
 import { WidgetPanel } from '../layout/WidgetPanel';
@@ -59,6 +59,20 @@ export function TripPlannerWidget() {
   const returnDateRef = useRef<HTMLInputElement>(null);
   const editReturnDateRef = useRef<HTMLInputElement>(null);
 
+  // Auto-select first planning trip on initial load
+  useEffect(() => {
+    if (!loading && trips.length > 0 && !selectedTripId) {
+      const planning = trips.find((t) => t.status === 'planning') || trips[0];
+      selectTrip(
+        planning.id,
+        planning.destination,
+        planning.start_date || '',
+        planning.end_date || '',
+        planning.airports || ''
+      );
+    }
+  }, [loading, trips.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const filteredDests: Destination[] = dest.trim().length > 0
     ? POPULAR_DESTINATIONS.filter((d) => d.name.toLowerCase().includes(dest.toLowerCase()))
     : [];
@@ -70,9 +84,33 @@ export function TripPlannerWidget() {
       )
     : [];
 
-  // Only push to store when destination + both dates are set
+  const [showSavePrompt, setShowSavePrompt] = useState(false);
+
+  // Push to store when destination + both dates are set, show save prompt
   function pushContextIfReady(d: string, s: string, e: string, a: string) {
-    if (d.trim() && s && e) setTripContext(d.trim(), s, e, a);
+    if (d.trim() && s && e) {
+      setTripContext(d.trim(), s, e, a);
+      if (!selectedTripId) setShowSavePrompt(true);
+    }
+  }
+
+  async function handleSaveTrip() {
+    if (dest.trim()) {
+      const trip = await create({
+        destination: dest.trim(),
+        start_date: startDate || undefined,
+        end_date: endDate || undefined,
+        airports: airport.toUpperCase() || 'EWR',
+      });
+      if (trip) {
+        selectTrip(trip.id, trip.destination, trip.start_date || '', trip.end_date || '', trip.airports || '');
+        setDest('');
+        setStartDate('');
+        setEndDate('');
+        setAirport('');
+      }
+      setShowSavePrompt(false);
+    }
   }
 
   function selectDestination(d: Destination) {
@@ -144,6 +182,7 @@ export function TripPlannerWidget() {
       setStartDate('');
       setEndDate('');
       setAirport('');
+      setShowSavePrompt(false);
     }
   }
 
@@ -325,7 +364,38 @@ export function TripPlannerWidget() {
           )}
         </form>
 
-        {/* Trip cards */}
+        {/* Save prompt */}
+        {showSavePrompt && dest.trim() && (
+          <div className="rounded-lg border border-violet-500/25 bg-violet-500/[0.08] px-3 py-2.5 flex items-center justify-between gap-2">
+            <div className="min-w-0">
+              <div className="text-[10px] text-violet-400/80 uppercase tracking-wider">Save this trip?</div>
+              <div className="text-xs text-gray-300 truncate">{dest}</div>
+            </div>
+            <div className="flex gap-1.5 shrink-0">
+              <button
+                onClick={() => setShowSavePrompt(false)}
+                className="rounded px-2.5 py-1 text-[10px] text-gray-500 hover:text-gray-300 border border-white/5 hover:bg-white/5 transition-all"
+              >
+                Skip
+              </button>
+              <button
+                onClick={handleSaveTrip}
+                className="rounded px-2.5 py-1 text-[10px] text-violet-300 bg-violet-500/20 border border-violet-500/30 hover:bg-violet-500/30 transition-all"
+              >
+                Save
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Saved trips */}
+        {trips.length > 0 && (
+          <div>
+            <div className="text-[9px] uppercase tracking-wider text-gray-600 font-semibold mb-1.5 px-0.5">
+              Saved Trips
+            </div>
+          </div>
+        )}
         <div className="space-y-1.5">
           {trips.map((trip) => {
             const isSelected = selectedTripId === trip.id;
