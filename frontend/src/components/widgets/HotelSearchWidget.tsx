@@ -176,6 +176,7 @@ export function HotelSearchWidget() {
       title="Hotel Search"
       accentColor="violet"
       icon={icon}
+      insightPrompt="Analyze hotel options for my trip. Compare prices, ratings, locations, and amenities. Recommend the best value hotels and suggest the ideal area to stay."
       headerRight={
         <select
           value={sortBy}

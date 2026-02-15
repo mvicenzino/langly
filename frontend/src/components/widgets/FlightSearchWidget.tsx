@@ -151,7 +151,7 @@ export function FlightSearchWidget() {
   );
 
   return (
-    <WidgetPanel title="Flight Search" accentColor="violet" icon={icon}>
+    <WidgetPanel title="Flight Search" accentColor="violet" icon={icon} insightPrompt={`Analyze flight options from ${localFrom || 'EWR'} to ${localTo || 'destination'} for ${passengers} passengers. Compare prices, airlines, and travel times. Recommend the best value flights and optimal booking strategy.`}>
       <div id="flight-search-results" className="p-3 space-y-3">
         {/* Auto-filled indicator */}
         {destination && hasContext && (
