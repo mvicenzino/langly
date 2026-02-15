@@ -1,5 +1,11 @@
 """Agent skill definitions — pre-built prompt templates for quick-access agent capabilities."""
-from flask import Blueprint, jsonify
+from __future__ import annotations
+
+import io
+import re
+
+from flask import Blueprint, jsonify, request
+import requests as http_requests
 
 skills_bp = Blueprint("skills", __name__)
 
@@ -308,3 +314,89 @@ def get_skill(skill_id):
     if not skill:
         return jsonify({"error": "Skill not found"}), 404
     return jsonify(skill)
+
+
+@skills_bp.route("/api/skills/extract", methods=["POST"])
+def extract_text():
+    """Extract text from an uploaded file (TXT, MD, PDF, DOCX) or a Google Docs URL."""
+
+    # ── URL extraction (JSON body) ────────────────────────────
+    if request.is_json:
+        url = (request.get_json() or {}).get("url", "").strip()
+        if not url:
+            return jsonify({"error": "Missing url field"}), 400
+
+        try:
+            text, name = _extract_from_url(url)
+            return jsonify({"text": text, "name": name})
+        except Exception as exc:
+            return jsonify({"error": str(exc)}), 422
+
+    # ── File upload (multipart) ───────────────────────────────
+    if "file" not in request.files:
+        return jsonify({"error": "No file or url provided"}), 400
+
+    f = request.files["file"]
+    if not f.filename:
+        return jsonify({"error": "Empty filename"}), 400
+
+    ext = f.filename.rsplit(".", 1)[-1].lower() if "." in f.filename else ""
+
+    try:
+        if ext in ("txt", "md"):
+            text = f.read().decode("utf-8", errors="replace")
+        elif ext == "pdf":
+            text = _extract_pdf(f)
+        elif ext == "docx":
+            text = _extract_docx(f)
+        else:
+            return jsonify({"error": f"Unsupported file type: .{ext}"}), 400
+    except Exception as exc:
+        return jsonify({"error": f"Extraction failed: {exc}"}), 422
+
+    return jsonify({"text": text, "name": f.filename})
+
+
+# ── helpers ───────────────────────────────────────────────────
+
+def _extract_pdf(f) -> str:
+    from PyPDF2 import PdfReader
+
+    reader = PdfReader(io.BytesIO(f.read()))
+    pages = [page.extract_text() or "" for page in reader.pages]
+    return "\n\n".join(pages).strip()
+
+
+def _extract_docx(f) -> str:
+    import docx
+
+    doc = docx.Document(io.BytesIO(f.read()))
+    return "\n\n".join(p.text for p in doc.paragraphs if p.text.strip())
+
+
+def _extract_from_url(url: str) -> tuple:
+    """Fetch text from a Google Docs link or a plain URL."""
+    # Google Docs → export as plain text
+    m = re.match(r"https?://docs\.google\.com/document/d/([^/]+)", url)
+    if m:
+        doc_id = m.group(1)
+        export_url = f"https://docs.google.com/document/d/{doc_id}/export?format=txt"
+        resp = http_requests.get(export_url, timeout=15)
+        resp.raise_for_status()
+        return resp.text.strip(), f"google-doc-{doc_id[:8]}.txt"
+
+    # Generic URL → fetch and strip HTML
+    resp = http_requests.get(url, timeout=15)
+    resp.raise_for_status()
+    content_type = resp.headers.get("content-type", "")
+    if "html" in content_type:
+        from bs4 import BeautifulSoup
+
+        soup = BeautifulSoup(resp.text, "html.parser")
+        for tag in soup(["script", "style", "nav", "footer", "header"]):
+            tag.decompose()
+        text = soup.get_text(separator="\n", strip=True)
+    else:
+        text = resp.text
+    name = url.rstrip("/").rsplit("/", 1)[-1][:40] or "webpage"
+    return text.strip(), name

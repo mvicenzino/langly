@@ -75,7 +75,11 @@ def register_handlers(socketio: SocketIO):
             print(f"[SOCKET] ERROR getting executor: {e}", flush=True)
             emit("chat:error", {"error": f"Agent initialization failed: {e}"})
             return
-        executor.handle_parsing_errors = True
+        executor.handle_parsing_errors = (
+            "Parsing error. You must respond using EXACTLY this format:\n"
+            "Thought: I now know the final answer\n"
+            "Final Answer: <your complete response here>"
+        )
 
         def run_agent():
             try:

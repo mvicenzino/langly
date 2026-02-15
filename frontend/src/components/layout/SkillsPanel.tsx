@@ -1,8 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { useSkills } from '../../hooks/useSkills';
+import { extractTextFromFile, extractTextFromUrl } from '../../api/skills';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
 import type { Skill } from '../../types/skills';
 import type { ReactNode } from 'react';
+
+interface AttachedFile {
+  name: string;
+  text: string;
+}
 
 const iconMap: Record<string, ReactNode> = {
   eye: (
@@ -70,7 +76,7 @@ const categoryColorMap: Record<string, string> = {
 const CATEGORY_ORDER = ['AI Operating', 'Strategy & Business', 'Content & Communication', 'Design & UX'];
 
 interface Props {
-  onLaunchSkill: (prompt: string) => void;
+  onLaunchSkill: (prompt: string, skillName?: string) => void;
 }
 
 export function SkillsPanel({ onLaunchSkill }: Props) {
@@ -78,7 +84,13 @@ export function SkillsPanel({ onLaunchSkill }: Props) {
   const [search, setSearch] = useState('');
   const [activeSkill, setActiveSkill] = useState<Skill | null>(null);
   const [userInput, setUserInput] = useState('');
+  const [attachedFiles, setAttachedFiles] = useState<AttachedFile[]>([]);
+  const [extracting, setExtracting] = useState(false);
+  const [linkInputOpen, setLinkInputOpen] = useState(false);
+  const [linkUrl, setLinkUrl] = useState('');
+  const [extractError, setExtractError] = useState('');
   const searchRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Cmd+K to focus search
   useEffect(() => {
@@ -90,6 +102,9 @@ export function SkillsPanel({ onLaunchSkill }: Props) {
       if (e.key === 'Escape' && activeSkill) {
         setActiveSkill(null);
         setUserInput('');
+        setAttachedFiles([]);
+        setLinkInputOpen(false);
+        setExtractError('');
       }
     }
     window.addEventListener('keydown', handleKeyDown);
@@ -112,12 +127,67 @@ export function SkillsPanel({ onLaunchSkill }: Props) {
 
   function handleLaunch() {
     if (!activeSkill) return;
-    const fullPrompt = userInput.trim()
-      ? `${activeSkill.prompt}\n\nContext: ${userInput.trim()}`
-      : activeSkill.prompt;
-    onLaunchSkill(fullPrompt);
+    const parts: string[] = [activeSkill.prompt];
+    if (userInput.trim()) parts.push(`Context:\n${userInput.trim()}`);
+    if (attachedFiles.length > 0) {
+      const docs = attachedFiles.map((f) => `--- ${f.name} ---\n${f.text}`).join('\n\n');
+      parts.push(
+        `The following documents have been provided inline below. ` +
+        `You already have the full content — do NOT use any tools to read them. ` +
+        `Analyze the content directly and provide your Final Answer.\n\n` +
+        `Attached Documents:\n\n${docs}`
+      );
+    }
+    onLaunchSkill(parts.join('\n\n'), activeSkill.name);
     setActiveSkill(null);
     setUserInput('');
+    setAttachedFiles([]);
+    setLinkInputOpen(false);
+    setExtractError('');
+  }
+
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    setExtracting(true);
+    setExtractError('');
+    try {
+      for (const file of Array.from(files)) {
+        const ext = file.name.split('.').pop()?.toLowerCase();
+        if (ext === 'txt' || ext === 'md') {
+          const text = await file.text();
+          setAttachedFiles((prev) => [...prev, { name: file.name, text }]);
+        } else {
+          const result = await extractTextFromFile(file);
+          setAttachedFiles((prev) => [...prev, { name: result.name, text: result.text }]);
+        }
+      }
+    } catch (err) {
+      setExtractError(err instanceof Error ? err.message : 'Failed to extract text');
+    } finally {
+      setExtracting(false);
+      e.target.value = '';
+    }
+  }
+
+  async function handleLinkSubmit() {
+    if (!linkUrl.trim()) return;
+    setExtracting(true);
+    setExtractError('');
+    try {
+      const result = await extractTextFromUrl(linkUrl.trim());
+      setAttachedFiles((prev) => [...prev, { name: result.name, text: result.text }]);
+      setLinkUrl('');
+      setLinkInputOpen(false);
+    } catch (err) {
+      setExtractError(err instanceof Error ? err.message : 'Failed to fetch URL');
+    } finally {
+      setExtracting(false);
+    }
+  }
+
+  function removeFile(index: number) {
+    setAttachedFiles((prev) => prev.filter((_, i) => i !== index));
   }
 
   if (loading) {
@@ -136,7 +206,7 @@ export function SkillsPanel({ onLaunchSkill }: Props) {
         {/* Back + Header */}
         <div className="flex items-center gap-3 px-1">
           <button
-            onClick={() => { setActiveSkill(null); setUserInput(''); }}
+            onClick={() => { setActiveSkill(null); setUserInput(''); setAttachedFiles([]); setLinkInputOpen(false); setExtractError(''); }}
             className="flex items-center gap-1.5 text-[11px] text-gray-500 hover:text-orange-400 transition-colors uppercase tracking-wider"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -210,6 +280,98 @@ export function SkillsPanel({ onLaunchSkill }: Props) {
           <label className="text-[10px] uppercase tracking-wider text-gray-500 font-mono mb-2 block">
             {activeSkill.inputLabel}
           </label>
+
+          {/* Attach buttons */}
+          <div className="flex items-center gap-2 mb-3">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".txt,.md,.pdf,.docx"
+              multiple
+              className="hidden"
+              onChange={handleFileSelect}
+            />
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              disabled={extracting}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-gray-400 hover:text-orange-400 hover:border-orange-500/20 transition-all disabled:opacity-50"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+              </svg>
+              Attach Doc
+            </button>
+            <button
+              onClick={() => { setLinkInputOpen(!linkInputOpen); setExtractError(''); }}
+              disabled={extracting}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-[11px] text-gray-400 hover:text-orange-400 hover:border-orange-500/20 transition-all disabled:opacity-50"
+            >
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+              </svg>
+              Paste Link
+            </button>
+            {extracting && (
+              <span className="inline-flex items-center gap-1.5 text-[10px] text-orange-400 font-mono">
+                <LoadingSpinner size="xs" />
+                Extracting...
+              </span>
+            )}
+          </div>
+
+          {/* Link URL input */}
+          {linkInputOpen && (
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                value={linkUrl}
+                onChange={(e) => setLinkUrl(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleLinkSubmit(); if (e.key === 'Escape') { setLinkInputOpen(false); setLinkUrl(''); } }}
+                placeholder="https://docs.google.com/document/d/..."
+                className="flex-1 rounded-lg border border-orange-500/15 bg-slate-900/60 px-3 py-1.5 text-xs text-gray-300 placeholder-gray-600 focus:border-orange-500/40 focus:outline-none font-mono transition-all"
+                autoFocus
+              />
+              <button
+                onClick={handleLinkSubmit}
+                disabled={!linkUrl.trim() || extracting}
+                className="rounded-lg border border-orange-500/30 bg-orange-500/10 px-3 py-1.5 text-[11px] font-semibold text-orange-400 hover:bg-orange-500/20 transition-all disabled:opacity-50"
+              >
+                Fetch
+              </button>
+            </div>
+          )}
+
+          {/* Error message */}
+          {extractError && (
+            <div className="mb-3 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-[11px] text-red-400 font-mono">
+              {extractError}
+            </div>
+          )}
+
+          {/* Attached file chips */}
+          {attachedFiles.length > 0 && (
+            <div className="flex flex-wrap gap-2 mb-3">
+              {attachedFiles.map((file, i) => (
+                <span
+                  key={`${file.name}-${i}`}
+                  className="inline-flex items-center gap-1.5 rounded-lg border border-orange-500/15 bg-orange-500/5 px-2.5 py-1 text-[11px] text-orange-400 font-mono"
+                >
+                  <svg className="h-3 w-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span className="truncate max-w-[140px]">{file.name}</span>
+                  <button
+                    onClick={() => removeFile(i)}
+                    className="shrink-0 text-gray-600 hover:text-red-400 transition-colors"
+                  >
+                    <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
           <textarea
             value={userInput}
             onChange={(e) => setUserInput(e.target.value)}

@@ -40,7 +40,7 @@ function responsive(lg: LayoutItem[]): ResponsiveLayouts<'lg' | 'md' | 'sm'> {
  * sm = 1-across (w=12, cols=12)
  */
 export const PAGE_LAYOUTS: Record<string, PageLayout> = {
-  // ─── Dashboard ───────────────────────────────────────
+  // ─── Dashboard (all widgets in one view) ───────────
   'dashboard-overview': {
     rowHeight: 61,
     layouts: responsive([
@@ -49,66 +49,45 @@ export const PAGE_LAYOUTS: Record<string, PageLayout> = {
       item('stocks', 8, 0, 4, 4),
       item('todos', 0, 4, 4, 4),
       item('notes', 4, 4, 4, 4),
-      item('contacts', 8, 4, 4, 4),
+      item('activity', 8, 4, 4, 4),
+      item('key-docs', 0, 8, 6, 4),
+      item('system', 6, 8, 6, 4),
     ]),
   },
 
-  'dashboard-activity': {
-    rowHeight: 91,
-    layouts: responsive([
-      item('activity', 0, 0, 6, 4),
-      item('todos', 6, 0, 6, 4),
-    ]),
-  },
-
-  'dashboard-monitoring': {
-    rowHeight: 71,
-    layouts: responsive([
-      item('system', 0, 0, 6, 4),
-      item('system-monitor', 6, 0, 6, 4),
-    ]),
-  },
-
-  // ─── Daily Briefs ────────────────────────────────────
-  'daily-briefs-widgets': {
-    rowHeight: 61,
-    layouts: responsive([
-      item('weather', 0, 0, 4, 4),
-      item('stocks', 4, 0, 4, 4),
-      item('stride', 8, 0, 4, 4),
-      item('activity', 0, 4, 4, 4),
-    ]),
-  },
-
-  // ─── Personal Finance ────────────────────────────────
-  'personal-finance-finances': {
+  // ─── Personal Finance (finances + markets combined) ─
+  'personal-finance-main': {
     rowHeight: 71,
     layouts: responsive([
       item('net-worth', 0, 0, 4, 4),
       item('net-worth-trend', 4, 0, 4, 4),
       item('cashflow', 8, 0, 4, 4),
-      item('spending', 0, 4, 6, 4),
-      item('transactions', 6, 4, 6, 4),
+      item('spending', 0, 4, 4, 4),
+      item('transactions', 4, 4, 4, 4),
+      item('stocks', 8, 4, 4, 4),
     ]),
   },
 
-  'personal-finance-widgets': {
+  // ─── Family Calendar ───────────────────────────────
+  'family-calendar-main': {
     rowHeight: 71,
     layouts: responsive([
-      item('stocks', 0, 0, 12, 4),
+      { i: 'calendar', x: 0, y: 0, w: 8, h: 7, minW: 6, minH: 6 },
+      { i: 'family-docs', x: 8, y: 0, w: 4, h: 4, minW: 3, minH: 3 },
+      { i: 'pregnancy', x: 8, y: 4, w: 4, h: 8, minW: 3, minH: 5 },
     ]),
   },
 
-  // ─── Family Calendar ─────────────────────────────────
-  'family-calendar-schedule': {
+  // ─── Career Growth ─────────────────────────────────
+  'career-growth-main': {
     rowHeight: 71,
     layouts: responsive([
-      { i: 'calendar', x: 0, y: 0, w: 12, h: 7, minW: 6, minH: 6 },
+      { i: 'stride', x: 0, y: 0, w: 12, h: 5, minW: 6, minH: 4 },
     ]),
   },
 
-  // ─── Travel Planning ─────────────────────────────────
-  'travel-planning-widgets': {
+  // ─── Travel Planning ───────────────────────────────
+  'travel-planning-main': {
     rowHeight: 61,
     layouts: responsive([
       item('weather', 0, 0, 12, 4),

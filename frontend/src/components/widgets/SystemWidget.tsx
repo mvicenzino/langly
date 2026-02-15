@@ -7,7 +7,9 @@ function formatBytes(bytes: number) {
   const gb = bytes / (1024 * 1024 * 1024);
   if (gb >= 1) return `${gb.toFixed(1)}GB`;
   const mb = bytes / (1024 * 1024);
-  return `${mb.toFixed(0)}MB`;
+  if (mb >= 1) return `${mb.toFixed(0)}MB`;
+  const kb = bytes / 1024;
+  return `${kb.toFixed(1)}KB`;
 }
 
 function UsageBar({ percent, color, label, detail }: {
@@ -64,7 +66,7 @@ export function SystemWidget() {
 
   return (
     <WidgetPanel
-      title="System"
+      title="System Monitor"
       accentColor="teal"
       icon={
         <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -75,11 +77,19 @@ export function SystemWidget() {
         loading ? (
           <LoadingSpinner size="sm" />
         ) : (
-          <button onClick={refresh} className="text-gray-600 hover:text-teal-400 transition-colors">
-            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-2">
+            {systemInfo && (
+              <span className="flex items-center gap-1">
+                <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-[9px] font-mono text-emerald-400/70 uppercase">Online</span>
+              </span>
+            )}
+            <button onClick={refresh} className="text-gray-600 hover:text-teal-400 transition-colors">
+              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+            </button>
+          </div>
         )
       }
     >
@@ -92,7 +102,13 @@ export function SystemWidget() {
                 <span className="text-[11px] font-medium text-gray-200">{systemInfo.hostname}</span>
                 <span className="text-[9px] font-mono text-teal-400/60">{systemInfo.arch}</span>
               </div>
-              <div className="text-[9px] font-mono text-gray-600">{systemInfo.os}</div>
+              <div className="grid grid-cols-2 gap-1 text-[9px] font-mono text-gray-600">
+                <div>{systemInfo.os}</div>
+                <div className="text-right">PY {systemInfo.python}</div>
+              </div>
+              {systemInfo.uptime && (
+                <div className="text-[9px] font-mono text-gray-600 mt-0.5">Uptime {systemInfo.uptime}</div>
+              )}
             </div>
 
             {/* Resource Meters */}
@@ -154,28 +170,28 @@ export function SystemWidget() {
                 </div>
               </div>
             )}
-          </>
-        )}
 
-        {/* Running Services */}
-        {services.length > 0 && (
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-teal-400/60 font-mono mb-1.5">
-              Services
-            </div>
-            <div className="flex flex-wrap gap-1.5">
-              {services.map((svc) => (
-                <span
-                  key={svc.port}
-                  className="inline-flex items-center gap-1 rounded border border-teal-500/20 bg-teal-500/5 px-1.5 py-0.5 text-[9px] font-mono text-teal-300/80"
-                >
-                  <span className="h-1 w-1 rounded-full bg-emerald-400" />
-                  {svc.name}
-                  <span className="text-gray-600">:{svc.port}</span>
-                </span>
-              ))}
-            </div>
-          </div>
+            {/* Running Services */}
+            {services.length > 0 && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-teal-400/60 font-mono mb-1.5">
+                  Services ({services.length} active)
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {services.map((svc) => (
+                    <span
+                      key={svc.port}
+                      className="inline-flex items-center gap-1 rounded border border-teal-500/20 bg-teal-500/5 px-1.5 py-0.5 text-[9px] font-mono text-teal-300/80"
+                    >
+                      <span className="h-1 w-1 rounded-full bg-emerald-400" />
+                      {svc.name}
+                      <span className="text-gray-600">:{svc.port}</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {!systemInfo && !loading && (

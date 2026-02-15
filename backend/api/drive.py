@@ -48,31 +48,30 @@ def drive_status():
     return jsonify({"configured": svc is not None})
 
 
-@drive_bp.route("/api/drive/files")
-def drive_files():
-    """List recent files from Google Drive."""
-    svc = _get_service()
-    if not svc:
-        return jsonify({"configured": False, "files": []})
+def _list_folder(svc, fid, recursive=False, depth=0):
+    """List files in a folder, optionally recursing into subfolders."""
+    q = f"'{fid}' in parents and trashed = false" if fid else "trashed = false"
+    result = svc.files().list(
+        q=q,
+        pageSize=100,
+        fields="files(id,name,mimeType,modifiedTime,size,webViewLink,iconLink,thumbnailLink)",
+        orderBy="modifiedTime desc",
+        supportsAllDrives=True,
+        includeItemsFromAllDrives=True,
+    ).execute()
 
-    folder_id = os.getenv("GOOGLE_DRIVE_FOLDER_ID", "")
-    page_size = request.args.get("limit", "20", type=str)
+    files = []
+    for f in result.get("files", []):
+        mime = f.get("mimeType", "")
+        is_folder = mime == "application/vnd.google-apps.folder"
 
-    try:
-        query_parts = ["trashed = false"]
-        if folder_id:
-            query_parts.append(f"'{folder_id}' in parents")
-
-        result = svc.files().list(
-            q=" and ".join(query_parts),
-            pageSize=int(page_size),
-            fields="files(id,name,mimeType,modifiedTime,size,webViewLink,iconLink,thumbnailLink)",
-            orderBy="modifiedTime desc",
-        ).execute()
-
-        files = []
-        for f in result.get("files", []):
-            mime = f.get("mimeType", "")
+        if is_folder and recursive and depth < 3:
+            sub_files = _list_folder(svc, f["id"], recursive, depth + 1)
+            for sf in sub_files:
+                if not sf.get("folder"):
+                    sf["folder"] = f["name"]
+            files.extend(sub_files)
+        elif not is_folder:
             files.append({
                 "id": f["id"],
                 "name": f["name"],
@@ -81,10 +80,59 @@ def drive_files():
                 "size": int(f.get("size", 0)) if f.get("size") else 0,
                 "webViewLink": f.get("webViewLink", ""),
                 "iconLink": f.get("iconLink", ""),
-                "isFolder": mime == "application/vnd.google-apps.folder",
+                "isFolder": False,
                 "isGoogleDoc": mime.startswith("application/vnd.google-apps."),
+                "folder": "",
             })
+    return files
 
-        return jsonify({"configured": True, "files": files})
+
+@drive_bp.route("/api/drive/files")
+def drive_files():
+    """List recent files from Google Drive."""
+    svc = _get_service()
+    if not svc:
+        return jsonify({"configured": False, "files": []})
+
+    folder_id = request.args.get("folder_id", os.getenv("GOOGLE_DRIVE_FOLDER_ID", ""))
+    page_size = int(request.args.get("limit", "20"))
+    recursive = request.args.get("recursive", "false").lower() == "true"
+
+    try:
+        all_files = _list_folder(svc, folder_id, recursive)
+        all_files.sort(key=lambda f: f.get("modifiedTime", ""), reverse=True)
+        return jsonify({"configured": True, "files": all_files[:page_size]})
     except Exception as e:
         return jsonify({"configured": True, "files": [], "error": str(e)}), 500
+
+
+@drive_bp.route("/api/drive/multi")
+def drive_multi():
+    """List files from multiple Google Drive folders in a single request."""
+    svc = _get_service()
+    if not svc:
+        return jsonify({"configured": False, "groups": []})
+
+    # folder_ids=id1:label1,id2:label2,...
+    raw = request.args.get("folders", "")
+    page_size = int(request.args.get("limit", "50"))
+    recursive = request.args.get("recursive", "false").lower() == "true"
+
+    groups = []
+    for entry in raw.split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        if ":" in entry:
+            fid, label = entry.split(":", 1)
+        else:
+            fid, label = entry, entry
+
+        try:
+            files = _list_folder(svc, fid, recursive)
+            files.sort(key=lambda f: f.get("modifiedTime", ""), reverse=True)
+            groups.append({"label": label, "files": files[:page_size]})
+        except Exception:
+            groups.append({"label": label, "files": [], "error": "Failed to load"})
+
+    return jsonify({"configured": True, "groups": groups})

@@ -33,6 +33,10 @@ def create_app():
     from backend.api.finance import finance_bp
     from backend.api.calendar import calendar_bp
     from backend.api.stride import stride_bp
+    from backend.api.content_calendar import content_calendar_bp
+    from backend.api.social import social_bp
+    from backend.api.briefs import briefs_bp
+    from backend.api.docs import docs_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(health_bp)
@@ -51,6 +55,10 @@ def create_app():
     app.register_blueprint(finance_bp)
     app.register_blueprint(calendar_bp)
     app.register_blueprint(stride_bp)
+    app.register_blueprint(content_calendar_bp)
+    app.register_blueprint(social_bp)
+    app.register_blueprint(briefs_bp)
+    app.register_blueprint(docs_bp)
 
     # Register socket handlers
     from backend.sockets.chat_handler import register_handlers
@@ -65,7 +73,12 @@ def create_app():
             return None
         if path == "/" or path.startswith("/api/auth/"):
             return None
+        if path == "/api/social/linkedin/callback":
+            return None
         if not path.startswith("/api/"):
+            return None
+        # Skip auth for localhost requests (OpenClaw, CLI tools)
+        if request.remote_addr in ("127.0.0.1", "::1"):
             return None
 
         from backend.api.auth import is_token_valid

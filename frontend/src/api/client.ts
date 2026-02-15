@@ -61,7 +61,7 @@ export async function apiDelete<T>(path: string): Promise<T> {
 
 // ── Calendar (Kindora) ──────────────────────────────────────────────────────
 
-import type { CalendarEvent, FamilyMember } from '../types/calendar';
+import type { CalendarEvent, FamilyMember, CareDocument, CalendarMedication } from '../types/calendar';
 import type { StridePipeline, StrideApplication, StrideStats, StrideEvent } from '../types/stride';
 
 export const calendarApi = {
@@ -78,6 +78,40 @@ export const calendarApi = {
   updateEvent: (id: string, data: Partial<CalendarEvent>) => apiPut<CalendarEvent>(`/api/calendar/events/${id}`, data),
   deleteEvent: (id: string) => apiDelete<{ success: boolean }>(`/api/calendar/events/${id}`),
   getMembers: () => apiGet<FamilyMember[]>('/api/calendar/members'),
+  getDocuments: () => apiGet<CareDocument[]>('/api/calendar/documents'),
+  getMedications: () => apiGet<CalendarMedication[]>('/api/calendar/medications'),
+};
+
+// ── Content Calendar ────────────────────────────────────────────────────────
+
+import type { ContentCalendarItem, ContentBatch, GenerateResult, SocialStatus } from '../types/contentCalendar';
+
+export const contentCalendarApi = {
+  getItems: (params?: { batch_id?: string; week?: number; platform?: string; status?: string }) => {
+    const qs = new URLSearchParams();
+    if (params?.batch_id) qs.set('batch_id', params.batch_id);
+    if (params?.week) qs.set('week', String(params.week));
+    if (params?.platform) qs.set('platform', params.platform);
+    if (params?.status) qs.set('status', params.status);
+    const q = qs.toString();
+    return apiGet<ContentCalendarItem[]>(`/api/content-calendar${q ? `?${q}` : ''}`);
+  },
+  generate: (startDate?: string) =>
+    apiPost<GenerateResult>('/api/content-calendar/generate', startDate ? { start_date: startDate } : {}),
+  getBatches: () => apiGet<ContentBatch[]>('/api/content-calendar/batches'),
+  updateItem: (id: number, data: Partial<ContentCalendarItem>) =>
+    apiPut<ContentCalendarItem>(`/api/content-calendar/${id}`, data),
+  deleteItem: (id: number) => apiDelete<{ success: boolean }>(`/api/content-calendar/${id}`),
+  deleteBatch: (batchId: string) => apiDelete<{ success: boolean; deleted: number }>(`/api/content-calendar/batch/${batchId}`),
+  publishItem: (id: number) => apiPost<ContentCalendarItem>(`/api/content-calendar/${id}/publish`, {}),
+};
+
+// ── Social Connections ───────────────────────────────────────────────────────
+
+export const socialApi = {
+  getStatus: () => apiGet<SocialStatus>('/api/social/status'),
+  getLinkedInAuthUrl: () => apiGet<{ auth_url: string }>('/api/social/linkedin/auth'),
+  disconnectLinkedIn: () => apiDelete<{ success: boolean }>('/api/social/linkedin/disconnect'),
 };
 
 // ── Stride (Job Tracker) ────────────────────────────────────────────────────

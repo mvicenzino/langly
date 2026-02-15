@@ -146,7 +146,43 @@ def init_tables():
                     created_at TIMESTAMPTZ DEFAULT NOW(),
                     UNIQUE(note_id, contact_id)
                 );
+                CREATE TABLE IF NOT EXISTS content_calendar (
+                    id SERIAL PRIMARY KEY,
+                    batch_id TEXT NOT NULL,
+                    platform TEXT NOT NULL,
+                    scheduled_date DATE NOT NULL,
+                    week_number INTEGER NOT NULL,
+                    title TEXT NOT NULL,
+                    body TEXT NOT NULL,
+                    hashtags TEXT DEFAULT '',
+                    status TEXT DEFAULT 'draft',
+                    notes TEXT DEFAULT '',
+                    published_url TEXT DEFAULT '',
+                    published_at TIMESTAMPTZ,
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                );
+                CREATE TABLE IF NOT EXISTS social_oauth_tokens (
+                    id SERIAL PRIMARY KEY,
+                    platform TEXT NOT NULL UNIQUE,
+                    access_token TEXT NOT NULL,
+                    refresh_token TEXT DEFAULT '',
+                    token_type TEXT DEFAULT 'Bearer',
+                    expires_at TIMESTAMPTZ,
+                    scope TEXT DEFAULT '',
+                    raw_response JSONB DEFAULT '{}',
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                );
             """)
+            # Add columns to existing tables (safe idempotent migration)
+            try:
+                cur.execute("""
+                    ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS published_url TEXT DEFAULT '';
+                    ALTER TABLE content_calendar ADD COLUMN IF NOT EXISTS published_at TIMESTAMPTZ;
+                """)
+            except Exception:
+                pass
             conn.commit()
     except Exception:
         conn.rollback()

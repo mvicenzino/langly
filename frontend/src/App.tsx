@@ -14,10 +14,8 @@ import { StockWidget } from './components/widgets/StockWidget';
 import { WeatherWidget } from './components/widgets/WeatherWidget';
 import { TodoWidget } from './components/widgets/TodoWidget';
 import { NotesWidget } from './components/widgets/NotesWidget';
-import { SystemMonitorWidget } from './components/widgets/SystemMonitorWidget';
 import { SystemWidget } from './components/widgets/SystemWidget';
 import { ActivityWidget } from './components/widgets/ActivityWidget';
-import { ContactsWidget } from './components/widgets/ContactsWidget';
 import { NetWorthWidget } from './components/widgets/NetWorthWidget';
 import { TransactionsWidget } from './components/widgets/TransactionsWidget';
 import { NetWorthTrendWidget } from './components/widgets/NetWorthTrendWidget';
@@ -26,46 +24,44 @@ import { CashflowWidget } from './components/widgets/CashflowWidget';
 import { CalendarWidget } from './components/widgets/CalendarWidget';
 import { CalendarMonthWidget } from './components/widgets/CalendarMonthWidget';
 import { StrideWidget } from './components/widgets/StrideWidget';
+import { KeyDocsWidget } from './components/widgets/KeyDocsWidget';
+import { FamilyDocsWidget } from './components/widgets/FamilyDocsWidget';
+import { PregnancyWidget } from './components/widgets/PregnancyWidget';
+import { ContentCalendar } from './components/layout/ContentCalendar';
+import { DailyBriefView } from './components/views/DailyBriefView';
 import { commandCategories } from './config/commandCategories';
 import { useChat } from './hooks/useChat';
 import { useInsightStore } from './store/insightStore';
 
-// Define which widgets appear under which tabs per category
+// Define which tabs appear per category (single main tab per section)
 const categoryTabs: Record<string, { id: string; label: string }[]> = {
   dashboard: [
     { id: 'overview', label: 'Overview' },
-    { id: 'activity', label: 'Activity' },
-    { id: 'monitoring', label: 'Monitoring' },
   ],
   'daily-briefs': [
-    { id: 'commands', label: 'Briefs' },
-    { id: 'widgets', label: 'Feeds' },
+    { id: 'main', label: 'Daily Briefs' },
   ],
   'personal-finance': [
-    { id: 'finances', label: 'My Finances' },
-    { id: 'commands', label: 'Finance Tools' },
-    { id: 'widgets', label: 'Markets' },
+    { id: 'main', label: 'My Finances' },
   ],
   'family-calendar': [
-    { id: 'schedule', label: 'Schedule' },
-    { id: 'commands', label: 'Calendar' },
+    { id: 'main', label: 'Schedule' },
   ],
   'health-wellness': [
-    { id: 'commands', label: 'Wellness Tools' },
+    { id: 'main', label: 'Wellness' },
   ],
   'travel-planning': [
-    { id: 'commands', label: 'Travel Tools' },
-    { id: 'widgets', label: 'Weather & Info' },
+    { id: 'main', label: 'Travel' },
   ],
   'kids-education': [
-    { id: 'commands', label: 'Education Tools' },
+    { id: 'main', label: 'Education' },
   ],
   'career-growth': [
-    { id: 'pipeline', label: 'Job Pipeline' },
-    { id: 'commands', label: 'Career Tools' },
+    { id: 'main', label: 'Job Pipeline' },
   ],
   'claude-skills': [
     { id: 'skills', label: 'My Skills' },
+    { id: 'content-calendar', label: 'Content Calendar' },
   ],
 };
 
@@ -143,8 +139,9 @@ function Dashboard() {
     setShowMainContent(false);
   }, []);
 
-  const handleLaunchSkill = useCallback((prompt: string) => {
-    setChatOpen(true);
+  const handleLaunchSkill = useCallback((prompt: string, skillName?: string) => {
+    setShowMainContent(true);
+    setCommandTitle(skillName || 'Skill Result');
     chat.sendMessage(prompt);
   }, [chat.sendMessage]);
 
@@ -250,31 +247,14 @@ function Dashboard() {
                       <div key="stocks"><StockWidget /></div>
                       <div key="todos"><TodoWidget /></div>
                       <div key="notes"><NotesWidget /></div>
-                      <div key="contacts"><ContactsWidget /></div>
-                    </WidgetGrid>
-                  )}
-
-                  {activeCategory === 'dashboard' && activeTab === 'activity' && (
-                    <WidgetGrid pageId="dashboard-activity">
                       <div key="activity"><ActivityWidget /></div>
-                      <div key="todos"><TodoWidget /></div>
-                    </WidgetGrid>
-                  )}
-
-                  {activeCategory === 'dashboard' && activeTab === 'monitoring' && (
-                    <WidgetGrid pageId="dashboard-monitoring">
+                      <div key="key-docs"><KeyDocsWidget /></div>
                       <div key="system"><SystemWidget /></div>
-                      <div key="system-monitor"><SystemMonitorWidget /></div>
                     </WidgetGrid>
                   )}
 
                   {/* ─── Claude Skills ────────────────────────────── */}
                   {activeCategory === 'claude-skills' && activeTab === 'skills' && (
-                    <SkillsPanel onLaunchSkill={handleLaunchSkill} />
-                  )}
-
-                  {/* ─── Category Command Grids / Main Content Panel ── */}
-                  {activeCategory !== 'dashboard' && activeCategory !== 'claude-skills' && activeTab === 'commands' && (
                     showMainContent ? (
                       <div className="rounded-xl border border-white/5 overflow-hidden"
                            style={{ background: 'rgba(3, 7, 18, 0.6)' }}>
@@ -286,56 +266,75 @@ function Dashboard() {
                         />
                       </div>
                     ) : (
-                      <CommandGrid categoryId={activeCategory} onRunCommand={handleRunCommand} />
+                      <SkillsPanel onLaunchSkill={handleLaunchSkill} />
                     )
                   )}
 
-                  {/* ─── Daily Briefs ──────────────────────────────── */}
-                  {activeCategory === 'daily-briefs' && activeTab === 'widgets' && (
-                    <WidgetGrid pageId="daily-briefs-widgets">
-                      <div key="weather"><WeatherWidget /></div>
-                      <div key="stocks"><StockWidget /></div>
-                      <div key="stride"><StrideWidget /></div>
-                      <div key="activity"><ActivityWidget /></div>
-                    </WidgetGrid>
+                  {/* ─── Content Calendar ────────────────────────────── */}
+                  {activeCategory === 'claude-skills' && activeTab === 'content-calendar' && (
+                    <ContentCalendar />
                   )}
 
-                  {/* ─── Personal Finance ──────────────────────────── */}
-                  {activeCategory === 'personal-finance' && activeTab === 'finances' && (
-                    <WidgetGrid pageId="personal-finance-finances">
-                      <div key="net-worth"><NetWorthWidget /></div>
-                      <div key="net-worth-trend"><NetWorthTrendWidget /></div>
-                      <div key="cashflow"><CashflowWidget /></div>
-                      <div key="spending"><SpendingWidget /></div>
-                      <div key="transactions"><TransactionsWidget /></div>
-                    </WidgetGrid>
-                  )}
+                  {/* ─── Sections with widgets + commands ─────────── */}
+                  {activeCategory !== 'dashboard' && activeCategory !== 'claude-skills' && activeTab === 'main' && (
+                    showMainContent ? (
+                      <div className="rounded-xl border border-white/5 overflow-hidden"
+                           style={{ background: 'rgba(3, 7, 18, 0.6)' }}>
+                        <MainContentPanel
+                          messages={chat.messages}
+                          isLoading={chat.isLoading}
+                          commandTitle={commandTitle}
+                          onBack={handleBack}
+                        />
+                      </div>
+                    ) : (
+                      <>
+                        {/* ─── Daily Briefs ─────────────────────────── */}
+                        {activeCategory === 'daily-briefs' && (
+                          <DailyBriefView />
+                        )}
 
-                  {activeCategory === 'personal-finance' && activeTab === 'widgets' && (
-                    <WidgetGrid pageId="personal-finance-widgets">
-                      <div key="stocks"><StockWidget /></div>
-                    </WidgetGrid>
-                  )}
+                        {/* ─── Personal Finance ─────────────────────── */}
+                        {activeCategory === 'personal-finance' && (
+                          <WidgetGrid pageId="personal-finance-main">
+                            <div key="net-worth"><NetWorthWidget /></div>
+                            <div key="net-worth-trend"><NetWorthTrendWidget /></div>
+                            <div key="cashflow"><CashflowWidget /></div>
+                            <div key="spending"><SpendingWidget /></div>
+                            <div key="transactions"><TransactionsWidget /></div>
+                            <div key="stocks"><StockWidget /></div>
+                          </WidgetGrid>
+                        )}
 
-                  {/* ─── Family Calendar ───────────────────────────── */}
-                  {activeCategory === 'family-calendar' && activeTab === 'schedule' && (
-                    <WidgetGrid pageId="family-calendar-schedule">
-                      <div key="calendar"><CalendarMonthWidget /></div>
-                    </WidgetGrid>
-                  )}
+                        {/* ─── Family Calendar ──────────────────────── */}
+                        {activeCategory === 'family-calendar' && (
+                          <WidgetGrid pageId="family-calendar-main">
+                            <div key="calendar"><CalendarMonthWidget /></div>
+                            <div key="family-docs"><FamilyDocsWidget /></div>
+                            <div key="pregnancy"><PregnancyWidget /></div>
+                          </WidgetGrid>
+                        )}
 
-                  {/* ─── Career Growth — Job Pipeline ──────────────── */}
-                  {activeCategory === 'career-growth' && activeTab === 'pipeline' && (
-                    <WidgetGrid pageId="career-growth-pipeline">
-                      <div key="stride"><StrideWidget /></div>
-                    </WidgetGrid>
-                  )}
+                        {/* ─── Career Growth ────────────────────────── */}
+                        {activeCategory === 'career-growth' && (
+                          <WidgetGrid pageId="career-growth-main">
+                            <div key="stride"><StrideWidget /></div>
+                          </WidgetGrid>
+                        )}
 
-                  {/* ─── Travel Planning ───────────────────────────── */}
-                  {activeCategory === 'travel-planning' && activeTab === 'widgets' && (
-                    <WidgetGrid pageId="travel-planning-widgets">
-                      <div key="weather"><WeatherWidget /></div>
-                    </WidgetGrid>
+                        {/* ─── Travel Planning ──────────────────────── */}
+                        {activeCategory === 'travel-planning' && (
+                          <WidgetGrid pageId="travel-planning-main">
+                            <div key="weather"><WeatherWidget /></div>
+                          </WidgetGrid>
+                        )}
+
+                        {/* Command grid below widgets */}
+                        <div className="mt-4">
+                          <CommandGrid categoryId={activeCategory} onRunCommand={handleRunCommand} />
+                        </div>
+                      </>
+                    )
                   )}
                 </>
               )}
