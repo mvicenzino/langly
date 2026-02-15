@@ -1,14 +1,17 @@
 """Google Drive integration — lists recent files from a shared folder using a service account."""
 from __future__ import annotations
 
+import io
 import json
 import os
-from flask import Blueprint, jsonify, request
+import threading
+from flask import Blueprint, Response, jsonify, request
 
 drive_bp = Blueprint("drive", __name__)
 
 # Lazy-load the Google client to avoid import errors if not configured
 _service = None
+_drive_lock = threading.Lock()
 
 
 def _get_service():
@@ -51,14 +54,15 @@ def drive_status():
 def _list_folder(svc, fid, recursive=False, depth=0):
     """List files in a folder, optionally recursing into subfolders."""
     q = f"'{fid}' in parents and trashed = false" if fid else "trashed = false"
-    result = svc.files().list(
-        q=q,
-        pageSize=100,
-        fields="files(id,name,mimeType,modifiedTime,size,webViewLink,iconLink,thumbnailLink)",
-        orderBy="modifiedTime desc",
-        supportsAllDrives=True,
-        includeItemsFromAllDrives=True,
-    ).execute()
+    with _drive_lock:
+        result = svc.files().list(
+            q=q,
+            pageSize=100,
+            fields="files(id,name,mimeType,modifiedTime,size,webViewLink,iconLink,thumbnailLink)",
+            orderBy="modifiedTime desc",
+            supportsAllDrives=True,
+            includeItemsFromAllDrives=True,
+        ).execute()
 
     files = []
     for f in result.get("files", []):
@@ -85,6 +89,34 @@ def _list_folder(svc, fid, recursive=False, depth=0):
                 "folder": "",
             })
     return files
+
+
+@drive_bp.route("/api/drive/thumbnail/<file_id>")
+def drive_thumbnail(file_id: str):
+    """Proxy an image from Google Drive so the browser can display it."""
+    svc = _get_service()
+    if not svc:
+        return jsonify({"error": "Drive not configured"}), 500
+
+    try:
+        from googleapiclient.http import MediaIoBaseDownload
+
+        with _drive_lock:
+            meta = svc.files().get(fileId=file_id, fields="mimeType", supportsAllDrives=True).execute()
+            mime = meta.get("mimeType", "application/octet-stream")
+
+            buf = io.BytesIO()
+            req = svc.files().get_media(fileId=file_id, supportsAllDrives=True)
+            dl = MediaIoBaseDownload(buf, req)
+            done = False
+            while not done:
+                _, done = dl.next_chunk()
+
+        buf.seek(0)
+        return Response(buf.read(), mimetype=mime, headers={"Cache-Control": "public, max-age=3600"})
+    except Exception as e:
+        status = 404 if "not found" in str(e).lower() or "404" in str(e) else 500
+        return jsonify({"error": str(e)}), status
 
 
 @drive_bp.route("/api/drive/files")
