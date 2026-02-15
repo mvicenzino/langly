@@ -79,6 +79,9 @@ def search_flights(
     data = resp.json()
 
     if "error" in data:
+        # "no results" is not a real error — just return empty list
+        if "hasn't returned any results" in data["error"].lower() or "no results" in data["error"].lower():
+            return []
         raise RuntimeError(data["error"])
 
     offers = []
