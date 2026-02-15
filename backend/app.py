@@ -37,6 +37,7 @@ def create_app():
     from backend.api.social import social_bp
     from backend.api.briefs import briefs_bp
     from backend.api.docs import docs_bp
+    from backend.api.travel import travel_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(health_bp)
@@ -59,6 +60,7 @@ def create_app():
     app.register_blueprint(social_bp)
     app.register_blueprint(briefs_bp)
     app.register_blueprint(docs_bp)
+    app.register_blueprint(travel_bp)
 
     # Register socket handlers
     from backend.sockets.chat_handler import register_handlers

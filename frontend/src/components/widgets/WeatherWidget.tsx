@@ -10,7 +10,12 @@ const WEATHER_ICONS: Record<string, string> = {
   'Light rain': '🌦️', 'Moderate rain': '🌧️', 'Heavy rain': '🌧️',
   'Light snow': '🌨️', 'Moderate snow': '❄️', 'Heavy snow': '❄️',
   'Thunderstorm': '⛈️', 'Patchy rain nearby': '🌦️', 'Patchy rain possible': '🌦️',
-  'Light drizzle': '🌦️',
+  'Light drizzle': '🌦️', 'Clear sky': '☀️', 'Mainly clear': '🌤️',
+  'Foggy': '🌫️', 'Rime fog': '🌫️', 'Drizzle': '🌦️', 'Heavy drizzle': '🌦️',
+  'Rain': '🌧️', 'Snow': '❄️', 'Snow grains': '❄️',
+  'Light showers': '🌦️', 'Showers': '🌧️', 'Heavy showers': '🌧️',
+  'Light snow showers': '🌨️', 'Snow showers': '🌨️',
+  'Thunderstorm w/ hail': '⛈️', 'Severe thunderstorm': '⛈️',
 };
 
 function getIcon(desc: string) {
@@ -18,7 +23,7 @@ function getIcon(desc: string) {
 }
 
 export function WeatherWidget() {
-  const { weatherData, loading, refresh } = useWeather();
+  const { weatherData, loading, refresh, travelCity } = useWeather();
   const { addLocation, removeLocation } = useSettingsStore();
   const [input, setInput] = useState('');
 
@@ -69,52 +74,61 @@ export function WeatherWidget() {
           </button>
         </form>
 
-        {weatherData.map((w) => (
-          <div key={w.location} className="rounded-lg border border-white/5 p-3"
-               style={{ background: 'rgba(15, 23, 42, 0.4)' }}>
-            <div className="flex items-start justify-between">
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-semibold text-white">{w.location}</span>
-                  <button
-                    onClick={() => removeLocation(w.location)}
-                    className="text-gray-700 hover:text-red-400 text-[10px] transition-colors"
-                  >
-                    x
-                  </button>
-                </div>
-                <div className="text-[10px] text-blue-400/60 uppercase tracking-wider">{w.description}</div>
-              </div>
-              <span className="text-2xl">{getIcon(w.description)}</span>
-            </div>
-            <div className="mt-2 flex items-end gap-4">
-              <span className="text-2xl font-bold text-white font-mono"
-                    style={{ textShadow: '0 0 20px rgba(59, 130, 246, 0.2)' }}>
-                {w.tempF}°<span className="text-sm text-gray-400">F</span>
-              </span>
-              <div className="text-[10px] text-gray-500 space-y-0.5 font-mono">
-                <div>FEELS {w.feelsLikeF}°F</div>
-                <div>HUM {w.humidity}%</div>
-                <div>WIND {w.windSpeedMph}mph {w.windDir}</div>
-              </div>
-            </div>
-
-            {w.forecast.length > 0 && (
-              <div className="mt-2 flex gap-2 border-t border-white/5 pt-2">
-                {w.forecast.map((f) => (
-                  <div key={f.date} className="flex-1 text-center">
-                    <div className="text-[10px] text-gray-600 uppercase">
-                      {new Date(f.date + 'T00:00:00').toLocaleDateString('en', { weekday: 'short' })}
-                    </div>
-                    <div className="text-[11px] text-gray-400 font-mono">
-                      {f.maxTempF}°/{f.minTempF}°
-                    </div>
+        {weatherData.map((w) => {
+          const isTravelDest = !!(travelCity && w.location.toLowerCase().includes(travelCity.toLowerCase()));
+          return (
+            <div key={w.location} className="rounded-lg border border-white/5 p-3"
+                 style={{ background: 'rgba(15, 23, 42, 0.4)' }}>
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-sm font-semibold text-white">{w.location}</span>
+                    {isTravelDest ? (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-violet-500/15 text-violet-400/70 border border-violet-500/20">
+                        Trip
+                      </span>
+                    ) : (
+                      <button
+                        onClick={() => removeLocation(w.location)}
+                        className="text-gray-700 hover:text-red-400 text-[10px] transition-colors"
+                      >
+                        x
+                      </button>
+                    )}
                   </div>
-                ))}
+                  <div className="text-[10px] text-blue-400/60 uppercase tracking-wider">{w.description}</div>
+                </div>
+                <span className="text-2xl">{getIcon(w.description)}</span>
               </div>
-            )}
-          </div>
-        ))}
+              <div className="mt-2 flex items-end gap-4">
+                <span className="text-2xl font-bold text-white font-mono"
+                      style={{ textShadow: '0 0 20px rgba(59, 130, 246, 0.2)' }}>
+                  {w.tempF}°<span className="text-sm text-gray-400">F</span>
+                </span>
+                <div className="text-[10px] text-gray-500 space-y-0.5 font-mono">
+                  <div>FEELS {w.feelsLikeF}°F</div>
+                  <div>HUM {w.humidity}%</div>
+                  <div>WIND {w.windSpeedMph}mph {w.windDir}</div>
+                </div>
+              </div>
+
+              {w.forecast.length > 0 && (
+                <div className="mt-2 flex gap-2 border-t border-white/5 pt-2">
+                  {w.forecast.map((f) => (
+                    <div key={f.date} className="flex-1 text-center">
+                      <div className="text-[10px] text-gray-600 uppercase">
+                        {new Date(f.date + 'T00:00:00').toLocaleDateString('en', { weekday: 'short' })}
+                      </div>
+                      <div className="text-[11px] text-gray-400 font-mono">
+                        {f.maxTempF}°/{f.minTempF}°
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
 
         {weatherData.length === 0 && !loading && (
           <p className="text-center text-[11px] text-gray-600 py-6 uppercase tracking-wider">

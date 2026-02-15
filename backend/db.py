@@ -174,6 +174,35 @@ def init_tables():
                     created_at TIMESTAMPTZ DEFAULT NOW(),
                     updated_at TIMESTAMPTZ DEFAULT NOW()
                 );
+                CREATE TABLE IF NOT EXISTS trips (
+                    id SERIAL PRIMARY KEY,
+                    destination TEXT NOT NULL,
+                    start_date DATE,
+                    end_date DATE,
+                    notes TEXT DEFAULT '',
+                    status TEXT DEFAULT 'planning',
+                    airports TEXT DEFAULT 'EWR',
+                    created_at TIMESTAMPTZ DEFAULT NOW(),
+                    updated_at TIMESTAMPTZ DEFAULT NOW()
+                );
+                CREATE TABLE IF NOT EXISTS packing_items (
+                    id SERIAL PRIMARY KEY,
+                    trip_id INTEGER REFERENCES trips(id) ON DELETE CASCADE,
+                    category TEXT NOT NULL DEFAULT 'essentials',
+                    item TEXT NOT NULL,
+                    packed BOOLEAN DEFAULT FALSE,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                );
+                CREATE TABLE IF NOT EXISTS saved_searches (
+                    id SERIAL PRIMARY KEY,
+                    search_type TEXT NOT NULL,
+                    label TEXT NOT NULL,
+                    destination TEXT DEFAULT '',
+                    url TEXT DEFAULT '',
+                    metadata JSONB DEFAULT '{}',
+                    trip_id INTEGER REFERENCES trips(id) ON DELETE SET NULL,
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                );
             """)
             # Add columns to existing tables (safe idempotent migration)
             try:

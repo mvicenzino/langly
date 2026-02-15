@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { useDailyBrief } from '../../hooks/useDailyBrief';
 import { WidgetPanel } from '../layout/WidgetPanel';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
 import type { BriefSection, BriefNewsItem, BriefMarketItem, BriefWeather } from '../../types/briefs';
 
-const SECTION_ICONS: Record<string, JSX.Element> = {
+const SECTION_ICONS: Record<string, React.ReactNode> = {
   weather: (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
       <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z" />

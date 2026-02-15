@@ -35,10 +35,6 @@ function buildEventMap(events: CalendarEvent[]): Map<string, CalendarEvent[]> {
   return map;
 }
 
-function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
-}
-
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
   'July', 'August', 'September', 'October', 'November', 'December'];
 const DAY_HEADERS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];

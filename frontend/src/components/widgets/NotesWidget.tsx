@@ -282,8 +282,8 @@ export function NotesWidget() {
                       {contact.name.charAt(0)}
                     </span>
                     <span className="text-xs truncate">{contact.name}</span>
-                    {contact.company && (
-                      <span className="text-[10px] text-gray-600 truncate ml-auto">{contact.company}</span>
+                    {contact.companyName && (
+                      <span className="text-[10px] text-gray-600 truncate ml-auto">{contact.companyName}</span>
                     )}
                   </button>
                 ))}

@@ -54,10 +54,13 @@ def get_weather(location):
 
 def _open_meteo(location: str):
     """Fetch weather from Open-Meteo (geocode + weather)."""
-    clean = location.replace("+", " ").replace(",", " ").strip()
-    parts = [p.strip() for p in re.split(r"[,\s]+", clean) if p.strip()]
-    search_name = parts[0] if parts else clean
-    state_hint = parts[1] if len(parts) > 1 else None
+    clean = location.replace("+", " ").strip()
+    # Split by comma to separate city from state/country hint
+    # e.g. "Morristown, NJ" → city="Morristown", hint="NJ"
+    # e.g. "Fort Myers" → city="Fort Myers", hint=None
+    comma_parts = [p.strip() for p in clean.split(",") if p.strip()]
+    search_name = comma_parts[0] if comma_parts else clean
+    state_hint = comma_parts[1] if len(comma_parts) > 1 else None
 
     geo = requests.get(
         "https://geocoding-api.open-meteo.com/v1/search",
