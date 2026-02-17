@@ -23,7 +23,7 @@ export function Header({ chatOpen, onToggleChat, onOpenSettings }: Props) {
         <div>
           <div className="flex items-baseline gap-0">
             <h1 className="text-xl font-bold tracking-tight text-white glow-text-cyan">langly</h1>
-            <span className="text-xl font-light text-cyan-400">.chat</span>
+            <span className="text-xl font-light text-cyan-400">.io</span>
           </div>
           <div className="text-[9px] font-mono uppercase tracking-[0.25em] text-gray-500 mt-1">
             Your Personal Central Intelligence Agent

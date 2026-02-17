@@ -40,7 +40,7 @@ function formatDateRange(start: string | null, end: string | null): string {
 
 export function TripPlannerWidget() {
   const { trips, loading, refresh, create, update, remove } = useTrips();
-  const { selectedTripId, selectTrip, clearTrip, setTripContext, hotelResults, flightResults } = useTravelStore();
+  const { selectedTripId, selectTrip, clearTrip, setTripContext, setPassengers, passengers, hotelResults, flightResults } = useTravelStore();
   const [dest, setDest] = useState('');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
@@ -357,6 +357,18 @@ export function TripPlannerWidget() {
                 onChange={(e) => { setEndDate(e.target.value); pushContextIfReady(dest, startDate, e.target.value, airport); }}
                 className="w-full rounded border border-violet-500/15 bg-slate-900/60 px-2 pt-2 pb-1 text-[11px] text-gray-400 focus:border-violet-500/40 focus:outline-none transition-all [color-scheme:dark]"
               />
+            </div>
+            <div className="relative">
+              <label className="absolute -top-1.5 left-1.5 text-[8px] text-violet-400/40 uppercase tracking-wider">Pax</label>
+              <select
+                value={passengers}
+                onChange={(e) => setPassengers(Number(e.target.value))}
+                className="w-14 rounded border border-violet-500/15 bg-slate-900/60 px-1.5 pt-2 pb-1 text-[11px] text-gray-400 focus:border-violet-500/40 focus:outline-none transition-all [color-scheme:dark] appearance-none text-center cursor-pointer"
+              >
+                {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+                  <option key={n} value={n}>{n}</option>
+                ))}
+              </select>
             </div>
           </div>
           {nightsBetween(startDate, endDate) && (
