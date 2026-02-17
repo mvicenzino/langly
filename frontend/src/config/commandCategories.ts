@@ -28,7 +28,7 @@ export const commandCategories: CommandCategory[] = [
   },
   {
     id: 'career-growth',
-    name: 'Job Agent',
+    name: 'Career Agent',
     icon: 'briefcase',
     color: 'cyan',
     commands: [
@@ -86,14 +86,7 @@ export const commandCategories: CommandCategory[] = [
     name: 'Travel Agent',
     icon: 'plane',
     color: 'violet',
-    commands: [
-      { id: 'destination-research', name: 'Research Destination', prompt: 'Help me research a family travel destination. We\'re: me, Carolyn (pregnant), Sebby (4), and possibly Jax (dog). Ask where I\'m thinking. Factor in: pregnancy-friendly activities, toddler logistics, pet-friendly options if Jax comes, keto-friendly food availability, and budget-consciousness. Give me a realistic assessment.' },
-      { id: 'flight-finder', name: 'Find Flights', prompt: 'Help me find flights from EWR/JFK/LGA area. Ask me: destination, dates, how many travelers (me + Carolyn + Sebby, or just me for a networking trip?). We need: family-friendly timing, direct flights preferred with a 4-year-old, and budget-conscious options. Show top 5 with prices and booking links.' },
-      { id: 'hotel-compare', name: 'Compare Hotels', prompt: 'Help me compare family-friendly hotels. Ask destination and dates. Must-haves: safe for a 4-year-old, comfortable for a pregnant woman, ideally with a kitchen (keto meal prep). Pet-friendly if Jax is coming. Pool is a huge bonus for Sebby. Budget-conscious. Show top 5 with pros/cons.' },
-      { id: 'road-trip', name: 'Road Trip Planner', prompt: 'Plan a family road trip from Morristown NJ. Ask me: destination or just "surprise me" with ideas. We have Sebby (4) so max 4-5 hours driving per day. Jax the dog may come — need pet-friendly stops. Carolyn is pregnant — frequent rest stops. Suggest: route, kid-friendly stops, restaurants with keto options, dog-friendly parks, and family hotels.' },
-      { id: 'packing-list', name: 'Packing List', prompt: 'Create a family packing list. Ask about destination and duration. Remember: Sebby is 4 (entertainment for travel, comfort items), Carolyn is pregnant (comfort, medical items), and Jax might come (dog supplies). I eat keto so include any food/snack notes. Organize by: each person, carry-on vs checked, and a "don\'t forget" section.' },
-      { id: 'day-trips', name: 'Day Trip Ideas', prompt: 'Suggest day trip ideas from Morristown NJ for this weekend. Family of 3 (Sebby is 4) + Jax the dog. Consider the current season and weather. Mix of: nature/parks, kid attractions, dog-friendly spots, and maybe something cultural. Within 1.5 hours driving. Include a quick food plan since we eat keto.' },
-    ],
+    commands: [],
   },
   {
     id: 'kids-education',
