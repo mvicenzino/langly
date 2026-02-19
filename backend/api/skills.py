@@ -298,6 +298,39 @@ SKILLS = [
             "Prioritized action plan",
         ],
     },
+    {
+        "id": "app-qa-testing",
+        "name": "App QA Testing",
+        "icon": "shield",
+        "color": "rose",
+        "category": "Engineering & QA",
+        "description": "8-dimension QA audit for React, Python, mobile, and transactional apps with prioritized fix queue and dev agent handoff",
+        "prompt": (
+            "Act as my QA Engineering Lead. I'll provide access to an app codebase or live URL. "
+            "Perform a comprehensive 8-dimension audit covering: "
+            "1. Functional Bugs (logic errors, edge cases, null handling, race conditions), "
+            "2. Performance (bundle size, render cycles, memory leaks, N+1 queries), "
+            "3. Security (XSS, CSRF, injection, auth bypass, exposed secrets), "
+            "4. Accessibility (ARIA, keyboard nav, contrast, screen readers), "
+            "5. Code Quality (dead code, duplication, naming, complexity), "
+            "6. Architecture (coupling, separation of concerns, circular deps), "
+            "7. Dependency Health (CVEs, outdated packages, unused deps), "
+            "8. UX Friction (missing loading/error/empty states, broken responsive). "
+            "For each issue found, create a fix ticket with: severity (P0-P3), component, "
+            "root cause, step-by-step fix instructions, and effort estimate. "
+            "Prioritize using: Severity x Impact Breadth x Fix Ease. "
+            "Output a prioritized fix queue ordered for an App Dev agent to execute."
+        ),
+        "inputLabel": "Describe your app, tech stack, and what to test",
+        "inputPlaceholder": "React + Node.js e-commerce app, test the full checkout flow and API endpoints...",
+        "timeSaved": "2-3 days → 2-3 hrs",
+        "features": [
+            "8-dimension deep audit",
+            "Severity-rated fix tickets",
+            "Prioritized fix queue",
+            "Dev agent handoff ready",
+        ],
+    },
 ]
 
 

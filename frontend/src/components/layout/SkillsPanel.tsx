@@ -63,6 +63,7 @@ const colorStyles: Record<string, { border: string; bg: string; text: string; gl
   blue: { border: 'border-blue-500/20', bg: 'bg-blue-500/5', text: 'text-blue-400', glow: 'rgba(59, 130, 246, 0.15)' },
   purple: { border: 'border-purple-500/20', bg: 'bg-purple-500/5', text: 'text-purple-400', glow: 'rgba(168, 85, 247, 0.15)' },
   teal: { border: 'border-teal-500/20', bg: 'bg-teal-500/5', text: 'text-teal-400', glow: 'rgba(20, 184, 166, 0.15)' },
+  rose: { border: 'border-rose-500/20', bg: 'bg-rose-500/5', text: 'text-rose-400', glow: 'rgba(244, 63, 94, 0.15)' },
   orange: { border: 'border-orange-500/20', bg: 'bg-orange-500/5', text: 'text-orange-400', glow: 'rgba(249, 115, 22, 0.15)' },
 };
 
@@ -71,9 +72,10 @@ const categoryColorMap: Record<string, string> = {
   'Strategy & Business': 'text-amber-400',
   'Content & Communication': 'text-purple-400',
   'Design & UX': 'text-cyan-400',
+  'Engineering & QA': 'text-rose-400',
 };
 
-const CATEGORY_ORDER = ['AI Operating', 'Strategy & Business', 'Content & Communication', 'Design & UX'];
+const CATEGORY_ORDER = ['AI Operating', 'Strategy & Business', 'Content & Communication', 'Design & UX', 'Engineering & QA'];
 
 interface Props {
   onLaunchSkill: (prompt: string, skillName?: string) => void;
