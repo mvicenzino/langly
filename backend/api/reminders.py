@@ -4,27 +4,41 @@ from __future__ import annotations
 import os
 import subprocess
 import json
+import time
 from flask import Blueprint, jsonify, request
 
 reminders_bp = Blueprint("reminders", __name__)
 
 REMINDER_LIST_NAME = os.getenv("APPLE_REMINDER_LIST", "Langly")
 
+# Simple in-memory cache to avoid hammering AppleScript
+_cache: dict = {"items": None, "ts": 0}
+_CACHE_TTL = 60  # seconds
+
 
 def _run_applescript(script: str) -> str:
     """Run an AppleScript and return stdout."""
     result = subprocess.run(
         ["osascript", "-e", script],
-        capture_output=True, text=True, timeout=15,
+        capture_output=True, text=True, timeout=30,
     )
     if result.returncode != 0:
         raise RuntimeError(result.stderr.strip() or "AppleScript failed")
     return result.stdout.strip()
 
 
+def _invalidate_cache():
+    _cache["items"] = None
+    _cache["ts"] = 0
+
+
 @reminders_bp.route("/api/reminders")
 def list_reminders():
     """List all reminders from Apple Reminders via AppleScript."""
+    # Return cached data if fresh
+    if _cache["items"] is not None and (time.time() - _cache["ts"]) < _CACHE_TTL:
+        return jsonify({"configured": True, "items": _cache["items"]})
+
     try:
         script = f'''
 tell application "Reminders"
@@ -85,6 +99,8 @@ end tell'''
                 "priority": priority,
                 "notes": notes,
             })
+        _cache["items"] = items
+        _cache["ts"] = time.time()
         return jsonify({"configured": True, "items": items})
     except Exception as e:
         import traceback
@@ -121,6 +137,7 @@ tell application "Reminders"
     return id of newReminder
 end tell'''
         uid = _run_applescript(script)
+        _invalidate_cache()
         return jsonify({"uid": uid, "task": task, "done": False})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -158,6 +175,7 @@ end tell'''
         result = _run_applescript(script)
         if result == "NOT_FOUND":
             return jsonify({"error": "Reminder not found"}), 404
+        _invalidate_cache()
         return jsonify({"uid": uid, "updated": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -181,6 +199,7 @@ end tell'''
         result = _run_applescript(script)
         if result == "NOT_FOUND":
             return jsonify({"error": "Reminder not found"}), 404
+        _invalidate_cache()
         return jsonify({"uid": uid, "deleted": True})
     except Exception as e:
         return jsonify({"error": str(e)}), 500
