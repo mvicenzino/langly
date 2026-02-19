@@ -62,6 +62,11 @@ const iconMap: Record<string, (active: boolean) => ReactElement> = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
   ),
+  folder: (a) => (
+    <svg className={`h-5 w-5 ${a ? 'text-indigo-400' : 'text-gray-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+    </svg>
+  ),
 };
 
 const colorMap: Record<string, string> = {
@@ -75,6 +80,7 @@ const colorMap: Record<string, string> = {
   purple: 'border-purple-500/30 bg-purple-500/10',
   cyan: 'border-cyan-500/30 bg-cyan-500/10',
   red: 'border-red-500/30 bg-red-500/10',
+  indigo: 'border-indigo-500/30 bg-indigo-500/10',
 };
 
 interface Props {
@@ -112,9 +118,9 @@ export function Sidebar({ activeCategory, onSelectCategory, collapsed, onToggleC
       {/* Nav items */}
       <nav className="flex-1 overflow-y-auto py-2 space-y-0.5 px-2">
         {allItems.map((item) => {
-          if (item.id === '_divider') {
+          if (item.id.startsWith('_divider')) {
             return (
-              <div key="_divider" className="my-2 mx-1 border-t border-white/5" />
+              <div key={item.id} className="my-2 mx-1 border-t border-white/5" />
             );
           }
           const active = activeCategory === item.id;

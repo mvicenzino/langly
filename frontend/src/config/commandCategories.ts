@@ -27,6 +27,17 @@ export const commandCategories: CommandCategory[] = [
     ],
   },
   {
+    id: 'projects',
+    name: 'Kindora Projects',
+    icon: 'folder',
+    color: 'indigo',
+    commands: [
+      { id: 'calendora-launch', name: 'Calendora Launch Plan', prompt: 'Review the Calendora launch plan and roadmap. What are the key milestones? What needs to happen this month? Break down the next 30 days into actionable tasks and check progress.' },
+      { id: 'daily-standup', name: 'Daily Standup', prompt: 'Give me a quick daily standup for Calendora: what I completed yesterday, what I\'m focused on today, any blockers. Keep it to 3-5 bullet points.' },
+      { id: 'week-plan', name: 'Week Planning', prompt: 'Help me plan the week for Calendora development. What are the top 3-5 things that will move the needle forward? Break them into daily tasks. Prioritize ruthlessly.' },
+    ],
+  },
+  {
     id: 'career-growth',
     name: 'Career Agent',
     icon: 'briefcase',
