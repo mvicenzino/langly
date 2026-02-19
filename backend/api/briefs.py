@@ -1,4 +1,4 @@
-"""Daily Brief aggregator — fetches News, Markets, Jobs, X/Social, Reddit AI, Weather, Drudge in parallel."""
+"""Daily Brief aggregator — fetches Markets, Jobs, Hacker News, Weather, Drudge in parallel."""
 from __future__ import annotations
 
 import os
@@ -11,63 +11,14 @@ import requests
 from bs4 import BeautifulSoup
 from flask import Blueprint, jsonify
 
-from backend.profile import NEWS_SECTIONS, STOCKS, USER
+from backend.profile import STOCKS, USER
 from backend.api.weather import _open_meteo, WMO_CODES
 from backend.services.stride_service import get_pipeline, get_dashboard_stats, get_upcoming_events
 
 briefs_bp = Blueprint("briefs", __name__)
 
-_SERPAPI_KEY = None
-
-
-def _get_serpapi_key() -> str:
-    global _SERPAPI_KEY
-    if _SERPAPI_KEY is None:
-        _SERPAPI_KEY = os.getenv("SERPAPI_API_KEY", "")
-    return _SERPAPI_KEY
-
 
 # ── Individual fetchers ──────────────────────────────────────────────────────
-
-
-def _fetch_news() -> dict:
-    """Fetch news across profile sections via SerpAPI."""
-    api_key = _get_serpapi_key()
-    if not api_key:
-        return {"id": "news", "title": "News", "icon": "newspaper", "items": [], "error": "SerpAPI key not configured"}
-
-    items = []
-    for section in NEWS_SECTIONS:
-        try:
-            resp = requests.get(
-                "https://serpapi.com/search.json",
-                params={
-                    "engine": "google",
-                    "q": section["query"],
-                    "tbm": "nws",
-                    "tbs": "qdr:d",
-                    "api_key": api_key,
-                    "gl": "us",
-                    "hl": "en",
-                    "num": 4,
-                },
-                timeout=10,
-            )
-            data = resp.json()
-            results = data.get("news_results", data.get("organic_results", []))[:3]
-            for r in results:
-                items.append({
-                    "title": r.get("title", ""),
-                    "snippet": r.get("snippet", ""),
-                    "url": r.get("link", ""),
-                    "source": r.get("source", {}).get("name", "") if isinstance(r.get("source"), dict) else r.get("source", ""),
-                    "date": r.get("date", ""),
-                    "category": section["name"],
-                })
-        except Exception:
-            pass
-
-    return {"id": "news", "title": "News", "icon": "newspaper", "items": items}
 
 
 def _fetch_drudge() -> dict:
@@ -151,57 +102,39 @@ def _fetch_markets() -> dict:
                 if ticker == "^GSPC":
                     display = "S&P 500"
                 elif ticker == "^DJI":
-                    display = "Dow Jones"
+                    display = "Dow"
                 elif ticker == "^IXIC":
-                    display = "NASDAQ"
+                    display = "Nasdaq"
 
                 items.append({
                     "ticker": ticker,
-                    "name": display,
                     "price": round(close, 2),
                     "change": round(change, 2),
-                    "changePercent": round(change_pct, 2),
-                    "isIndex": ticker.startswith("^"),
+                    "changePct": round(change_pct, 2),
+                    "display": display,
                 })
             except Exception:
-                pass
-    except ImportError:
-        return {"id": "markets", "title": "Markets", "icon": "chart", "items": [], "error": "yfinance not installed"}
-    except Exception as e:
-        return {"id": "markets", "title": "Markets", "icon": "chart", "items": [], "error": str(e)}
+                continue
 
-    return {"id": "markets", "title": "Markets", "icon": "chart", "items": items}
+        return {"id": "markets", "title": "Markets", "icon": "trending-up", "items": items}
+    except Exception as e:
+        return {"id": "markets", "title": "Markets", "icon": "trending-up", "items": [], "error": str(e)}
 
 
 def _fetch_jobs() -> dict:
-    """Fetch job pipeline data from Stride job tracker."""
+    """Fetch job pipeline from Stride."""
     try:
         pipeline = get_pipeline()
-        stats = get_dashboard_stats()
-        events = get_upcoming_events()
+        if not pipeline:
+            return {"id": "jobs", "title": "Job Pipeline", "icon": "briefcase", "pipeline": None}
 
-        # Build status counts from pipeline data
-        status_counts = {}
-        if isinstance(pipeline, dict):
-            for status, apps in pipeline.items():
-                if isinstance(apps, list):
-                    status_counts[status] = len(apps)
-        elif isinstance(stats, dict):
-            status_counts = {
-                k: v for k, v in stats.items()
-                if isinstance(v, (int, float))
-            }
+        status_counts = pipeline.get("statusCounts", {})
+        upcoming = pipeline.get("upcoming", [])[:5]
 
-        # Build upcoming events list
-        upcoming = []
-        if isinstance(events, list):
-            for ev in events[:5]:
-                upcoming.append({
-                    "title": ev.get("title", ev.get("name", "")),
-                    "date": ev.get("date", ev.get("scheduled_at", "")),
-                    "type": ev.get("type", ev.get("event_type", "")),
-                    "company": ev.get("company", ev.get("company_name", "")),
-                })
+        # Reformat upcoming
+        for ev in upcoming:
+            if "scheduled_at" in ev and not ev.get("date"):
+                ev["date"] = ev["scheduled_at"]
 
         return {
             "id": "jobs",
@@ -217,94 +150,44 @@ def _fetch_jobs() -> dict:
         return {"id": "jobs", "title": "Job Pipeline", "icon": "briefcase", "pipeline": None, "error": str(e)}
 
 
-def _fetch_social() -> dict:
-    """Fetch X.com / Twitter AI & tech posts via SerpAPI."""
-    api_key = _get_serpapi_key()
-    if not api_key:
-        return {"id": "social", "title": "X / Social", "icon": "twitter", "items": [], "error": "SerpAPI key not configured"}
+def _fetch_hackernews() -> dict:
+    """Fetch top stories from Hacker News (completely free, no auth)."""
+    try:
+        # Get top 30 story IDs
+        resp = requests.get("https://hacker-news.firebaseio.com/v0/topstories.json", timeout=5)
+        resp.raise_for_status()
+        story_ids = resp.json()[:30]
 
-    queries = [
-        "site:x.com AI artificial intelligence",
-        "site:x.com data analytics tech leadership",
-    ]
-    items = []
-
-    for q in queries:
-        try:
-            resp = requests.get(
-                "https://serpapi.com/search.json",
-                params={
-                    "engine": "google",
-                    "q": q,
-                    "tbs": "qdr:d",
-                    "api_key": api_key,
-                    "gl": "us",
-                    "hl": "en",
-                    "num": 5,
-                },
-                timeout=10,
-            )
-            data = resp.json()
-            results = data.get("organic_results", [])[:4]
-            for r in results:
-                items.append({
-                    "title": r.get("title", ""),
-                    "snippet": r.get("snippet", ""),
-                    "url": r.get("link", ""),
-                    "source": "X.com",
-                    "date": r.get("date", ""),
-                })
-        except Exception:
-            pass
-
-    return {"id": "social", "title": "X / Social", "icon": "twitter", "items": items}
-
-
-def _fetch_reddit() -> dict:
-    """Fetch Reddit AI community posts via SerpAPI."""
-    api_key = _get_serpapi_key()
-    if not api_key:
-        return {"id": "reddit", "title": "Reddit AI", "icon": "reddit", "items": [], "error": "SerpAPI key not configured"}
-
-    queries = [
-        "site:reddit.com (r/artificial OR r/MachineLearning OR r/LocalLLaMA OR r/OpenAI)",
-    ]
-    items = []
-
-    for q in queries:
-        try:
-            resp = requests.get(
-                "https://serpapi.com/search.json",
-                params={
-                    "engine": "google",
-                    "q": q,
-                    "tbs": "qdr:d",
-                    "api_key": api_key,
-                    "gl": "us",
-                    "hl": "en",
-                    "num": 8,
-                },
-                timeout=10,
-            )
-            data = resp.json()
-            results = data.get("organic_results", [])[:6]
-            for r in results:
-                # Extract subreddit from URL
-                url = r.get("link", "")
-                sub_match = re.search(r"r/(\w+)", url)
-                subreddit = f"r/{sub_match.group(1)}" if sub_match else "reddit"
+        items = []
+        for sid in story_ids:
+            if len(items) >= 10:
+                break
+            try:
+                story_resp = requests.get(
+                    f"https://hacker-news.firebaseio.com/v0/item/{sid}.json",
+                    timeout=3,
+                )
+                story_resp.raise_for_status()
+                story = story_resp.json()
+                
+                # Skip dead/deleted stories or stories without title
+                if not story or not story.get("title"):
+                    continue
 
                 items.append({
-                    "title": r.get("title", ""),
-                    "snippet": r.get("snippet", ""),
-                    "url": url,
-                    "source": subreddit,
-                    "date": r.get("date", ""),
+                    "title": story.get("title", ""),
+                    "url": story.get("url", f"https://news.ycombinator.com/item?id={sid}"),
+                    "source": "Hacker News",
+                    "score": story.get("score", 0),
+                    "comments": story.get("descendants", 0),
                 })
-        except Exception:
-            pass
+            except Exception:
+                # Skip stories that fail to load
+                continue
 
-    return {"id": "reddit", "title": "Reddit AI", "icon": "reddit", "items": items}
+        return {"id": "hackernews", "title": "Hacker News", "icon": "trending-up", "items": items}
+    except Exception as e:
+        return {"id": "hackernews", "title": "Hacker News", "icon": "trending-up", "items": [], "error": str(e)}
 
 
 def _fetch_weather() -> dict:
@@ -338,45 +221,45 @@ def _fetch_weather() -> dict:
                 "wind_speed_unit": "mph",
                 "forecast_days": 3,
             },
-            timeout=4,
+            timeout=5,
         ).json()
 
-        cur = wx.get("current", {})
-        code = cur.get("weather_code", 0)
-        wind_deg = cur.get("wind_direction_10m", 0)
-        dirs = ["N","NNE","NE","ENE","E","ESE","SE","SSE","S","SSW","SW","WSW","W","WNW","NW","NNW"]
-        wind_dir = dirs[int((wind_deg + 11.25) / 22.5) % 16]
-
-        forecasts = []
+        current = wx.get("current", {})
         daily = wx.get("daily", {})
-        for d, hi, lo, c in zip(daily.get("time", []), daily.get("temperature_2m_max", []),
-                                 daily.get("temperature_2m_min", []), daily.get("weather_code", [])):
-            forecasts.append({
-                "date": d,
-                "maxTempF": round(hi),
-                "minTempF": round(lo),
-                "description": WMO_CODES.get(c, "Unknown"),
-            })
+
+        # Decode WMO code
+        code = current.get("weather_code", 0)
+        desc = WMO_CODES.get(code, "Unknown")
 
         data = {
-            "location": place.get("name", "Morristown"),
-            "region": place.get("admin1", "New Jersey"),
-            "tempF": round(cur.get("temperature_2m", 0)),
-            "feelsLikeF": round(cur.get("apparent_temperature", 0)),
-            "humidity": cur.get("relative_humidity_2m", 0),
-            "description": WMO_CODES.get(code, "Unknown"),
-            "windSpeedMph": round(cur.get("wind_speed_10m", 0)),
-            "windDir": wind_dir,
-            "forecast": forecasts,
+            "tempF": current.get("temperature_2m", 0),
+            "feelsLikeF": current.get("apparent_temperature", 0),
+            "humidity": current.get("relative_humidity_2m", 0),
+            "description": desc,
+            "windSpeedMph": current.get("wind_speed_10m", 0),
+            "windDir": current.get("wind_direction_10m", "N/A"),
+            "forecast": [],
         }
+
+        # Daily forecast
+        if daily.get("time"):
+            for i, day in enumerate(daily["time"]):
+                high = daily["temperature_2m_max"][i]
+                low = daily["temperature_2m_min"][i]
+                code = daily["weather_code"][i]
+                data["forecast"].append({
+                    "date": day,
+                    "high": high,
+                    "low": low,
+                    "description": WMO_CODES.get(code, "Unknown"),
+                })
 
         return {
             "id": "weather",
             "title": "Weather",
             "icon": "cloud",
             "weather": {
-                "location": data.get("location", "Morristown"),
-                "region": data.get("region", "New Jersey"),
+                "location": place.get("name", "Morristown"),
                 "tempF": data.get("tempF", 0),
                 "feelsLikeF": data.get("feelsLikeF", 0),
                 "humidity": data.get("humidity", 0),
@@ -395,19 +278,18 @@ def _fetch_weather() -> dict:
 
 @briefs_bp.route("/api/briefs/daily")
 def daily_brief():
-    """Aggregate all 7 brief sections in parallel."""
+    """Aggregate all brief sections in parallel."""
     fetchers = {
-        "news": _fetch_news,
-        "drudge": _fetch_drudge,
+        "weather": _fetch_weather,
         "markets": _fetch_markets,
         "jobs": _fetch_jobs,
-        "social": _fetch_social,
-        "reddit": _fetch_reddit,
-        "weather": _fetch_weather,
+        "drudge": _fetch_drudge,
+        "hackernews": _fetch_hackernews,
     }
 
     sections = []
-    with ThreadPoolExecutor(max_workers=7) as pool:
+
+    with ThreadPoolExecutor(max_workers=5) as pool:
         futures = {pool.submit(fn): key for key, fn in fetchers.items()}
         for future in as_completed(futures):
             key = futures[future]
@@ -417,10 +299,48 @@ def daily_brief():
                 sections.append({"id": key, "title": key.title(), "items": [], "error": str(e)})
 
     # Sort into consistent display order
-    order = ["weather", "markets", "news", "drudge", "jobs", "social", "reddit"]
+    order = ["weather", "markets", "jobs", "drudge", "hackernews"]
     sections.sort(key=lambda s: order.index(s["id"]) if s["id"] in order else 99)
 
     return jsonify({
         "sections": sections,
         "generatedAt": datetime.utcnow().isoformat() + "Z",
     })
+
+
+# ── Individual section endpoints (for selective refresh) ────────────────────
+
+@briefs_bp.route("/api/briefs/hackernews")
+def brief_hackernews():
+    """Fetch Hacker News posts individually."""
+    return jsonify(_fetch_hackernews())
+
+
+@briefs_bp.route("/api/briefs/drudge")
+def brief_drudge():
+    """Fetch Drudge Report individually."""
+    return jsonify(_fetch_drudge())
+
+
+@briefs_bp.route("/api/briefs/markets")
+def brief_markets():
+    """Fetch markets individually."""
+    return jsonify(_fetch_markets())
+
+
+@briefs_bp.route("/api/briefs/jobs")
+def brief_jobs():
+    """Fetch job pipeline individually."""
+    return jsonify(_fetch_jobs())
+
+
+@briefs_bp.route("/api/briefs/weather")
+def brief_weather():
+    """Fetch weather individually."""
+    return jsonify(_fetch_weather())
+
+
+@briefs_bp.route("/api/briefs/test")
+def brief_test():
+    """Test endpoint to confirm briefs.py is loaded."""
+    return jsonify({"test": "SUCCESS - briefs.py is loaded and updated"})

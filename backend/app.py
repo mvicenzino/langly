@@ -38,6 +38,9 @@ def create_app():
     from backend.api.briefs import briefs_bp
     from backend.api.docs import docs_bp
     from backend.api.travel import travel_bp
+    from backend.api.emails import emails_bp
+    from backend.api.projects import projects_bp
+    from backend.api.sync import sync_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(health_bp)
@@ -61,10 +64,16 @@ def create_app():
     app.register_blueprint(briefs_bp)
     app.register_blueprint(docs_bp)
     app.register_blueprint(travel_bp)
+    app.register_blueprint(emails_bp)
+    app.register_blueprint(projects_bp)
+    app.register_blueprint(sync_bp)
 
     # Register socket handlers
     from backend.sockets.chat_handler import register_handlers
     register_handlers(socketio)
+
+    from backend.sockets.travel_handler import register_travel_handlers
+    register_travel_handlers(socketio)
 
     # ── Auth middleware ──────────────────────────────────────────
     @app.before_request

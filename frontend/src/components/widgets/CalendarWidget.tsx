@@ -7,10 +7,11 @@ import type { CalendarEvent, FamilyMember } from '../../types/calendar';
 export function CalendarWidget() {
   const [todayEvents, setTodayEvents] = useState<CalendarEvent[]>([]);
   const [upcomingEvents, setUpcomingEvents] = useState<CalendarEvent[]>([]);
+  const [monthEvents, setMonthEvents] = useState<CalendarEvent[]>([]);
   const [members, setMembers] = useState<FamilyMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [view, setView] = useState<'today' | 'week'>('today');
+  const [view, setView] = useState<'today' | 'week' | 'month'>('today');
 
   const memberMap = Object.fromEntries(members.map((m) => [m.id, m]));
 
@@ -18,13 +19,15 @@ export function CalendarWidget() {
     if (!silent) setLoading(true);
     setError('');
     try {
-      const [todayData, upcomingData, membersData] = await Promise.all([
+      const [todayData, upcomingData, monthData, membersData] = await Promise.all([
         calendarApi.getToday(),
         calendarApi.getUpcoming(7),
+        calendarApi.getUpcoming(30),
         calendarApi.getMembers(),
       ]);
       setTodayEvents(todayData);
       setUpcomingEvents(upcomingData);
+      setMonthEvents(monthData);
       setMembers(membersData);
     } catch (e) {
       if (!silent) setError(e instanceof Error ? e.message : 'Failed to load calendar');
@@ -57,7 +60,31 @@ export function CalendarWidget() {
     }
   };
 
-  const events = view === 'today' ? todayEvents : upcomingEvents;
+  const formatDateHeader = (iso: string) => {
+    try {
+      const d = new Date(iso);
+      return d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+    } catch {
+      return '';
+    }
+  };
+
+  const events = view === 'today' ? todayEvents : view === 'week' ? upcomingEvents : monthEvents;
+  
+  // Group events by date for week/month views
+  const groupEventsByDate = (evts: CalendarEvent[]) => {
+    const grouped: Record<string, CalendarEvent[]> = {};
+    evts.forEach((ev) => {
+      const dateKey = new Date(ev.startTime).toDateString();
+      if (!grouped[dateKey]) grouped[dateKey] = [];
+      grouped[dateKey].push(ev);
+    });
+    return grouped;
+  };
+
+  const eventsByDate = view !== 'today' ? groupEventsByDate(events) : null;
+  const sortedDates = eventsByDate ? Object.keys(eventsByDate).sort((a, b) => new Date(a).getTime() - new Date(b).getTime()) : [];
+
   const now = new Date();
   const todayLabel = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
 
@@ -106,6 +133,16 @@ export function CalendarWidget() {
           >
             Week ({upcomingEvents.length})
           </button>
+          <button
+            onClick={() => setView('month')}
+            className={`flex-1 rounded-md px-2 py-1 text-[10px] font-medium uppercase tracking-wider transition-all ${
+              view === 'month'
+                ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                : 'text-gray-600 hover:text-gray-400 border border-transparent'
+            }`}
+          >
+            Month ({monthEvents.length})
+          </button>
         </div>
 
         {error && (
@@ -114,59 +151,121 @@ export function CalendarWidget() {
 
         {/* Events list */}
         <div className="space-y-1.5 overflow-y-auto" style={{ maxHeight: 'calc(100% - 60px)' }}>
-          {events.map((ev) => {
-            const memberNames = ev.memberIds
-              .map((id) => memberMap[id]?.name)
-              .filter(Boolean);
-            const memberColor = ev.memberIds.length > 0
-              ? memberMap[ev.memberIds[0]]?.color || ev.color
-              : ev.color;
+          {view === 'today' ? (
+            // Today view - flat list
+            events.map((ev) => {
+              const memberNames = ev.memberIds
+                .map((id) => memberMap[id]?.name)
+                .filter(Boolean);
+              const memberColor = ev.memberIds.length > 0
+                ? memberMap[ev.memberIds[0]]?.color || ev.color
+                : ev.color;
 
-            return (
-              <div
-                key={ev.id}
-                className="flex items-start gap-2.5 rounded-lg border border-white/5 px-2.5 py-2 transition-all hover:border-blue-500/15"
-                style={{ background: 'rgba(15, 23, 42, 0.4)' }}
-              >
-                {/* Color indicator */}
+              return (
                 <div
-                  className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: memberColor || '#3B82F6' }}
-                />
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-xs font-medium ${ev.completed ? 'text-gray-600 line-through' : 'text-gray-200'}`}>
-                      {ev.title}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-[10px] text-blue-400/70 font-mono">
-                      {formatTime(ev.startTime)}
-                      {view === 'week' && ` · ${formatDate(ev.startTime)}`}
-                    </span>
-                    {memberNames.length > 0 && (
-                      <span className="text-[10px] text-gray-600">
-                        {memberNames.join(', ')}
+                  key={ev.id}
+                  className="flex items-start gap-2.5 rounded-lg border border-white/5 px-2.5 py-2 transition-all hover:border-blue-500/15"
+                  style={{ background: 'rgba(15, 23, 42, 0.4)' }}
+                >
+                  <div
+                    className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                    style={{ backgroundColor: memberColor || '#3B82F6' }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`text-xs font-medium ${ev.completed ? 'text-gray-600 line-through' : 'text-gray-200'}`}>
+                        {ev.title}
                       </span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <span className="text-[10px] text-blue-400/70 font-mono">
+                        {formatTime(ev.startTime)}
+                      </span>
+                      {memberNames.length > 0 && (
+                        <span className="text-[10px] text-gray-600">
+                          {memberNames.join(', ')}
+                        </span>
+                      )}
+                    </div>
+                    {ev.description && (
+                      <p className="text-[10px] text-gray-600 mt-0.5 truncate">{ev.description}</p>
                     )}
                   </div>
-                  {ev.description && (
-                    <p className="text-[10px] text-gray-600 mt-0.5 truncate">{ev.description}</p>
+                  {ev.completed && (
+                    <svg className="h-3 w-3 text-emerald-500/60 shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
                   )}
                 </div>
-                {ev.completed && (
-                  <svg className="h-3 w-3 text-emerald-500/60 shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                  </svg>
-                )}
+              );
+            })
+          ) : (
+            // Week/Month view - grouped by date with headers
+            sortedDates.map((dateKey) => (
+              <div key={dateKey} className="space-y-1">
+                {/* Date header */}
+                <div className="sticky top-0 px-2.5 py-1.5 bg-slate-900/60 rounded-md border-l-2 border-blue-400/50">
+                  <div className="text-[11px] font-semibold text-blue-300 uppercase tracking-wider">
+                    {formatDateHeader(dateKey)}
+                  </div>
+                </div>
+                {/* Events for this date */}
+                <div className="space-y-1 pl-2">
+                  {eventsByDate![dateKey].map((ev) => {
+                    const memberNames = ev.memberIds
+                      .map((id) => memberMap[id]?.name)
+                      .filter(Boolean);
+                    const memberColor = ev.memberIds.length > 0
+                      ? memberMap[ev.memberIds[0]]?.color || ev.color
+                      : ev.color;
+
+                    return (
+                      <div
+                        key={ev.id}
+                        className="flex items-start gap-2.5 rounded-lg border border-white/5 px-2.5 py-2 transition-all hover:border-blue-500/15"
+                        style={{ background: 'rgba(15, 23, 42, 0.4)' }}
+                      >
+                        <div
+                          className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full"
+                          style={{ backgroundColor: memberColor || '#3B82F6' }}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5">
+                            <span className={`text-xs font-medium ${ev.completed ? 'text-gray-600 line-through' : 'text-gray-200'}`}>
+                              {ev.title}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-[10px] text-blue-400/70 font-mono">
+                              {formatTime(ev.startTime)}
+                            </span>
+                            {memberNames.length > 0 && (
+                              <span className="text-[10px] text-gray-600">
+                                {memberNames.join(', ')}
+                              </span>
+                            )}
+                          </div>
+                          {ev.description && (
+                            <p className="text-[10px] text-gray-600 mt-0.5 truncate">{ev.description}</p>
+                          )}
+                        </div>
+                        {ev.completed && (
+                          <svg className="h-3 w-3 text-emerald-500/60 shrink-0 mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-            );
-          })}
+            ))
+          )}
         </div>
 
         {events.length === 0 && !loading && !error && (
           <p className="text-center text-[11px] text-gray-600 py-6 uppercase tracking-wider">
-            {view === 'today' ? 'No events today' : 'No upcoming events'}
+            {view === 'today' ? 'No events today' : view === 'week' ? 'No upcoming events this week' : 'No events this month'}
           </p>
         )}
 

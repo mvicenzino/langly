@@ -160,11 +160,23 @@ def get_events(start_date: Optional[str] = None,
         # Filter by date range if provided
         filtered = []
         for ev in events_list:
-            start = ev.get("startTime") or ev.get("start_time", "")
-            if start_date and start < start_date:
+            start_time_str = ev.get("startTime") or ev.get("start_time", "")
+            if not start_time_str:
                 continue
-            if end_date and start > end_date + "T23:59:59":
+            
+            # Parse start time (ISO format with optional Z)
+            try:
+                # Remove Z and parse as datetime for comparison
+                start_iso = start_time_str.replace("Z", "").split("T")[0]  # Get just the date part
+                
+                if start_date and start_iso < start_date:
+                    continue
+                if end_date and start_iso > end_date:
+                    continue
+            except Exception:
+                # Skip events we can't parse
                 continue
+            
             filtered.append(_normalize_event(ev))
 
         # Sort by start time

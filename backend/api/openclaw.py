@@ -233,3 +233,136 @@ def openclaw_workspace():
         return jsonify(files[:30])
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+
+def _get_openclaw_metrics():
+    """Helper to extract OpenClaw health metrics."""
+    from datetime import datetime, timezone
+    
+    config = {}
+    if OPENCLAW_CONFIG.exists():
+        config = json.loads(OPENCLAW_CONFIG.read_text())
+    
+    # 1. Gateway Status
+    gateway_alive = False
+    try:
+        resp = http_requests.get(
+            _gateway_url("/__openclaw__/canvas/"),
+            headers=_gateway_headers(),
+            timeout=2
+        )
+        gateway_alive = resp.status_code < 500
+    except Exception:
+        pass
+    
+    # 2. Active Agents (from sessions)
+    active_agents = 0
+    last_heartbeat = None
+    sessions_dir = OPENCLAW_DIR / "agents" / "main" / "sessions"
+    if sessions_dir.exists():
+        try:
+            sessions_file = sessions_dir.parent / "sessions.json"
+            if sessions_file.exists():
+                sessions_data = json.loads(sessions_file.read_text())
+                active_agents = len(sessions_data) if isinstance(sessions_data, list) else len(sessions_data.get("sessions", []))
+                
+                # Get last heartbeat time
+                for session_key in (sessions_data if isinstance(sessions_data, list) else sessions_data.get("sessions", [])):
+                    session_file = sessions_dir / f"{session_key}.jsonl"
+                    if session_file.exists():
+                        lines = session_file.read_text().strip().split('\n')
+                        if lines:
+                            last_entry = json.loads(lines[-1])
+                            timestamp = last_entry.get("createdAt") or last_entry.get("timestamp")
+                            if timestamp:
+                                last_heartbeat = timestamp
+                                break
+        except Exception:
+            pass
+    
+    # 3. Cron Job Health
+    cron_successful = 0
+    cron_failed = 0
+    if OPENCLAW_CRON.exists():
+        try:
+            cron_data = json.loads(OPENCLAW_CRON.read_text())
+            jobs = cron_data.get("jobs", [])
+            for job in jobs:
+                state = job.get("state", {})
+                last_status = state.get("lastStatus", "never")
+                if last_status == "success":
+                    cron_successful += 1
+                elif last_status == "error":
+                    cron_failed += 1
+        except Exception:
+            pass
+    
+    # 4. OpenClaw Version
+    version = config.get("meta", {}).get("lastTouchedVersion", "unknown")
+    
+    # 5. Heartbeat Interval
+    heartbeat_interval = config.get("gateway", {}).get("heartbeatMs", 1800000)
+    heartbeat_interval_min = heartbeat_interval // 60000
+    
+    return {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "gateway_status": "🟢 online" if gateway_alive else "🔴 offline",
+        "gateway_alive": gateway_alive,
+        "active_agents": active_agents,
+        "cron_health": {
+            "successful": cron_successful,
+            "failed": cron_failed,
+            "total": cron_successful + cron_failed,
+        },
+        "last_heartbeat": last_heartbeat or "never",
+        "heartbeat_interval_minutes": heartbeat_interval_min,
+        "version": version,
+    }
+
+
+@openclaw_bp.route("/api/openclaw/doctor")
+def openclaw_doctor():
+    """Get OpenClaw health metrics: gateway status, agents, cron jobs, heartbeat, version."""
+    try:
+        metrics = _get_openclaw_metrics()
+        return jsonify(metrics)
+    except Exception as e:
+        from datetime import datetime, timezone
+        return jsonify({"error": str(e), "timestamp": datetime.now(timezone.utc).isoformat()}), 500
+
+
+@openclaw_bp.route("/api/openclaw/doctor/sync-reminders", methods=["POST"])
+def openclaw_sync_reminders():
+    """Sync OpenClaw health metrics to Apple Reminders."""
+    try:
+        import subprocess
+        from datetime import datetime
+        
+        metrics = _get_openclaw_metrics()
+        
+        # Format reminder text
+        failure_rate = "0%" if metrics["cron_health"]["total"] == 0 else f"{int((metrics['cron_health']['failed'] / metrics['cron_health']['total']) * 100)}%"
+        
+        reminder_text = (
+            f"🦞 OpenClaw Health — {datetime.now().strftime('%I:%M %p')}\n\n"
+            f"Gateway: {metrics['gateway_status']}\n"
+            f"Agents: {metrics['active_agents']}\n"
+            f"Cron: {metrics['cron_health']['successful']}✓ {metrics['cron_health']['failed']}✗ ({failure_rate})\n"
+            f"Version: {metrics['version']}"
+        )
+        
+        # Create or update reminder via remindctl
+        result = subprocess.run(
+            ["remindctl", "add", "--list", "Reminders", reminder_text],
+            capture_output=True,
+            text=True,
+            timeout=5
+        )
+        
+        return jsonify({
+            "status": "synced",
+            "reminder_text": reminder_text,
+            "remindctl_result": result.returncode == 0
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500

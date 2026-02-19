@@ -23,6 +23,9 @@ interface TravelState {
   hotelLoading: boolean;
   hotelError: string | null;
 
+  // Insight trigger — timestamp so TabBar button can trigger the widget
+  insightRequestedAt: number;
+
   // Actions
   setTripContext: (dest: string, start: string, end: string, airport: string) => void;
   selectTrip: (id: number, dest: string, start: string, end: string, airport: string) => void;
@@ -36,6 +39,7 @@ interface TravelState {
   setHotelResults: (hotels: HotelOffer[]) => void;
   setHotelLoading: (loading: boolean) => void;
   setHotelError: (error: string | null) => void;
+  requestInsights: () => void;
 }
 
 /** Normalize any date format to YYYY-MM-DD (e.g. "Sun, 15 Mar 2026 00:00:00 GMT" → "2026-03-15") */
@@ -73,6 +77,8 @@ export const useTravelStore = create<TravelState>()(
       hotelResults: [],
       hotelLoading: false,
       hotelError: null,
+
+      insightRequestedAt: 0,
 
       setTripContext: (dest, start, end, airport) => {
         set({
@@ -123,6 +129,7 @@ export const useTravelStore = create<TravelState>()(
       setHotelResults: (hotels) => set({ hotelResults: hotels, hotelLoading: false, hotelError: null }),
       setHotelLoading: (loading) => set({ hotelLoading: loading }),
       setHotelError: (error) => set({ hotelError: error, hotelLoading: false }),
+      requestInsights: () => set({ insightRequestedAt: Date.now() }),
     }),
     {
       name: 'langly-travel',

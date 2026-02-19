@@ -6,6 +6,8 @@ export interface BriefNewsItem {
   date: string;
   category?: string;
   isHeadline?: boolean;
+  score?: number;
+  comments?: number;
 }
 
 export interface BriefMarketItem {

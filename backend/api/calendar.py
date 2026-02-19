@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from flask import Blueprint, request, jsonify
+import requests
 
 calendar_bp = Blueprint("calendar", __name__)
 
@@ -116,5 +117,25 @@ def documents():
         *_, get_care_documents = _get_service()
         data = get_care_documents()
         return jsonify(data)
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@calendar_bp.route("/api/calendar/calendora/events")
+def calendora_events():
+    """Fetch events from Calendora API (backend proxy to avoid CORS issues)."""
+    try:
+        family_id = request.args.get("familyId", "3eb14ef0-440c-4429-979a-29eceab7f32e")
+        api_key = "46032e9f5ed673c792551b3363c44a7e2eb690120fd7a8761e5a1e9217e4eef5"
+        
+        response = requests.get(
+            f"https://calendora.replit.app/api/events?familyId={family_id}",
+            headers={"X-API-Key": api_key},
+            timeout=10
+        )
+        response.raise_for_status()
+        return jsonify(response.json())
+    except requests.RequestException as e:
+        return jsonify({"error": f"Failed to fetch from Calendora: {str(e)}"}), 500
     except Exception as e:
         return jsonify({"error": str(e)}), 500

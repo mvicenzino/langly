@@ -254,7 +254,6 @@ export function TripPlannerWidget() {
     <WidgetPanel
       title="Trip Planner"
       accentColor="violet"
-      insightPrompt="Analyze upcoming travel plans, weather at destinations, and provide travel preparation recommendations."
       icon={icon}
       headerRight={
         loading ? <LoadingSpinner size="sm" /> : (
