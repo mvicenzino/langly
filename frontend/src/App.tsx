@@ -36,6 +36,7 @@ import { TravelInsightsWidget } from './components/widgets/TravelInsightsWidget'
 import { ContentCalendar } from './components/layout/ContentCalendar';
 import { DailyBriefView } from './components/views/DailyBriefView';
 import { ProjectsView } from './components/views/ProjectsView';
+import { LanglyProjectsView } from './components/views/LanglyProjectsView';
 import { commandCategories } from './config/commandCategories';
 import { useChat } from './hooks/useChat';
 import { useInsightStore } from './store/insightStore';
@@ -52,6 +53,9 @@ const categoryTabs: Record<string, { id: string; label: string }[]> = {
   ],
   'projects': [
     { id: 'main', label: 'Kindora Projects' },
+  ],
+  'langly': [
+    { id: 'main', label: 'Langly' },
   ],
   'personal-finance': [
     { id: 'main', label: 'My Finances' },
@@ -326,6 +330,11 @@ function Dashboard() {
                         {/* ─── Projects: Kindora ─────────────────────── */}
                         {activeCategory === 'projects' && (
                           <ProjectsView />
+                        )}
+
+                        {/* ─── Projects: Langly ──────────────────────── */}
+                        {activeCategory === 'langly' && (
+                          <LanglyProjectsView />
                         )}
 
                         {/* ─── Personal Finance ─────────────────────── */}

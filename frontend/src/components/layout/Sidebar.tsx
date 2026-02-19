@@ -67,6 +67,11 @@ const iconMap: Record<string, (active: boolean) => ReactElement> = {
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
     </svg>
   ),
+  zap: (a) => (
+    <svg className={`h-5 w-5 ${a ? 'text-cyan-400' : 'text-gray-500'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13 10V3L4 14h7v7l9-11h-7z" />
+    </svg>
+  ),
 };
 
 const colorMap: Record<string, string> = {
@@ -123,30 +128,73 @@ export function Sidebar({ activeCategory, onSelectCategory, collapsed, onToggleC
               <div key={item.id} className="my-2 mx-1 border-t border-white/5" />
             );
           }
-          const active = activeCategory === item.id;
+          // Skip langly from main list — it renders as a sub-item under projects
+          if (item.id === 'langly') return null;
+
           const IconFn = iconMap[item.icon];
+          const isProjectsParent = item.id === 'projects';
+          const projectsExpanded = isProjectsParent && (activeCategory === 'projects' || activeCategory === 'langly');
+          const active = isProjectsParent ? projectsExpanded : activeCategory === item.id;
+
           return (
-            <button
-              key={item.id}
-              onClick={() => onSelectCategory(item.id)}
-              className={`w-full flex items-center gap-3 rounded-lg px-2.5 py-2.5 transition-all group ${
-                active
-                  ? `border ${colorMap[item.color] || colorMap.cyan}`
-                  : 'border border-transparent hover:bg-white/[0.03] hover:border-white/5'
-              }`}
-              title={collapsed ? item.name : undefined}
-            >
-              <span className="shrink-0">
-                {IconFn ? IconFn(active) : null}
-              </span>
-              {!collapsed && (
-                <span className={`text-[11px] font-medium tracking-wide truncate transition-colors ${
-                  active ? 'text-gray-200' : 'text-gray-500 group-hover:text-gray-300'
-                }`}>
-                  {item.name}
+            <div key={item.id}>
+              <button
+                onClick={() => onSelectCategory(item.id)}
+                className={`w-full flex items-center gap-3 rounded-lg px-2.5 py-2.5 transition-all group ${
+                  active
+                    ? `border ${colorMap[item.color] || colorMap.cyan}`
+                    : 'border border-transparent hover:bg-white/[0.03] hover:border-white/5'
+                }`}
+                title={collapsed ? item.name : undefined}
+              >
+                <span className="shrink-0">
+                  {IconFn ? IconFn(active) : null}
                 </span>
+                {!collapsed && (
+                  <span className={`text-[11px] font-medium tracking-wide truncate transition-colors ${
+                    active ? 'text-gray-200' : 'text-gray-500 group-hover:text-gray-300'
+                  }`}>
+                    {item.name}
+                  </span>
+                )}
+              </button>
+
+              {/* Sub-items under Projects */}
+              {isProjectsParent && !collapsed && (
+                <div className={`ml-4 mt-0.5 space-y-0.5 overflow-hidden transition-all ${projectsExpanded ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
+                  <button
+                    onClick={() => onSelectCategory('projects')}
+                    className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-1.5 transition-all group ${
+                      activeCategory === 'projects'
+                        ? 'bg-indigo-500/10 border border-indigo-500/20'
+                        : 'border border-transparent hover:bg-white/[0.03]'
+                    }`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${activeCategory === 'projects' ? 'bg-indigo-400' : 'bg-gray-600'}`} />
+                    <span className={`text-[10px] font-medium tracking-wide transition-colors ${
+                      activeCategory === 'projects' ? 'text-gray-200' : 'text-gray-500 group-hover:text-gray-300'
+                    }`}>
+                      Kindora
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => onSelectCategory('langly')}
+                    className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-1.5 transition-all group ${
+                      activeCategory === 'langly'
+                        ? 'bg-cyan-500/10 border border-cyan-500/20'
+                        : 'border border-transparent hover:bg-white/[0.03]'
+                    }`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${activeCategory === 'langly' ? 'bg-cyan-400' : 'bg-gray-600'}`} />
+                    <span className={`text-[10px] font-medium tracking-wide transition-colors ${
+                      activeCategory === 'langly' ? 'text-gray-200' : 'text-gray-500 group-hover:text-gray-300'
+                    }`}>
+                      Langly
+                    </span>
+                  </button>
+                </div>
               )}
-            </button>
+            </div>
           );
         })}
       </nav>
