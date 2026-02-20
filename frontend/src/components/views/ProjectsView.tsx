@@ -80,6 +80,15 @@ export function ProjectsView() {
                 <span>→ Kindora Family Inc Business Plan and Roadmap</span>
                 <ExternalLink size={14} className="opacity-0 group-hover:opacity-100" />
               </a>
+              <a
+                href="https://drive.google.com/file/d/1XeI1knHlRcI1AoWTUGgvIr5Su6cLHixI/view?usp=drive_link"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium group"
+              >
+                <span>→ Kindora Pitch Deck</span>
+                <ExternalLink size={14} className="opacity-0 group-hover:opacity-100" />
+              </a>
             </div>
           </div>
 

@@ -78,6 +78,7 @@ const categoryTabs: Record<string, { id: string; label: string }[]> = {
   'claude-skills': [
     { id: 'skills', label: 'My Skills' },
     { id: 'content-calendar', label: 'Content Calendar' },
+    { id: 'skills-dashboard', label: 'Skills Dashboard' },
   ],
 };
 
@@ -306,6 +307,19 @@ function Dashboard() {
                   {/* ─── Content Calendar ────────────────────────────── */}
                   {activeCategory === 'claude-skills' && activeTab === 'content-calendar' && (
                     <ContentCalendar />
+                  )}
+
+                  {/* ─── Skills Dashboard (external) ──────────────────── */}
+                  {activeCategory === 'claude-skills' && activeTab === 'skills-dashboard' && (
+                    <div className="h-full rounded-xl border border-white/5 overflow-hidden"
+                         style={{ background: 'rgba(3, 7, 18, 0.6)' }}>
+                      <iframe
+                        src="http://localhost:3337"
+                        title="Skills Dashboard"
+                        className="w-full h-full border-0"
+                        style={{ minHeight: 'calc(100vh - 140px)' }}
+                      />
+                    </div>
                   )}
 
                   {/* ─── Sections with widgets + commands ─────────── */}
