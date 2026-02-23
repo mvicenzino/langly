@@ -27,8 +27,28 @@ def ensure_tasks_table():
         print(f"Error creating tasks table: {e}")
 
 
-# Ensure table exists on startup
+def ensure_resources_table():
+    """Create resources table if it doesn't exist."""
+    try:
+        execute("""
+            CREATE TABLE IF NOT EXISTS resources (
+                id SERIAL PRIMARY KEY,
+                project VARCHAR(50) NOT NULL,
+                name VARCHAR(255) NOT NULL,
+                url VARCHAR(2048) NOT NULL,
+                description TEXT DEFAULT '',
+                resource_type VARCHAR(50) DEFAULT 'document',
+                created_at TIMESTAMP DEFAULT NOW(),
+                updated_at TIMESTAMP DEFAULT NOW()
+            )
+        """)
+    except Exception as e:
+        print(f"Error creating resources table: {e}")
+
+
+# Ensure tables exist on startup
 ensure_tasks_table()
+ensure_resources_table()
 
 
 @projects_bp.route('/api/projects/tasks', methods=['GET'])
@@ -238,5 +258,98 @@ def get_week_sprint():
             'tasks_by_date': by_date,
             'summary': summary
         })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# RESOURCES API
+# ============================================================================
+
+@projects_bp.route('/api/projects/<project>/resources', methods=['GET'])
+def get_resources(project):
+    """Get all resources for a project."""
+    try:
+        sql = "SELECT * FROM resources WHERE project = %s ORDER BY created_at DESC"
+        resources = query(sql, [project])
+        return jsonify(resources)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@projects_bp.route('/api/projects/<project>/resources', methods=['POST'])
+def create_resource(project):
+    """Create a new resource for a project."""
+    data = request.json
+    
+    try:
+        sql = """
+            INSERT INTO resources (project, name, url, description, resource_type)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING *
+        """
+        
+        params = [
+            project,
+            data.get('name'),
+            data.get('url'),
+            data.get('description', ''),
+            data.get('type', 'document'),
+        ]
+        
+        result = execute_returning(sql, params)
+        if result:
+            return jsonify(result), 201
+        return jsonify({'error': 'Failed to create resource'}), 400
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@projects_bp.route('/api/projects/<project>/resources/<int:resource_id>', methods=['PUT'])
+def update_resource(project, resource_id):
+    """Update a resource."""
+    data = request.json
+    
+    try:
+        # Build dynamic UPDATE statement
+        updates = []
+        params = []
+        
+        if 'name' in data:
+            updates.append('name = %s')
+            params.append(data['name'])
+        if 'url' in data:
+            updates.append('url = %s')
+            params.append(data['url'])
+        if 'description' in data:
+            updates.append('description = %s')
+            params.append(data['description'])
+        if 'type' in data:
+            updates.append('resource_type = %s')
+            params.append(data['type'])
+        
+        if not updates:
+            return jsonify({'error': 'No fields to update'}), 400
+        
+        updates.append('updated_at = NOW()')
+        params.extend([project, resource_id])
+        
+        sql = f"UPDATE resources SET {', '.join(updates)} WHERE project = %s AND id = %s RETURNING *"
+        result = query(sql, params)
+        
+        if result:
+            return jsonify(result[0])
+        return jsonify({'error': 'Resource not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@projects_bp.route('/api/projects/<project>/resources/<int:resource_id>', methods=['DELETE'])
+def delete_resource(project, resource_id):
+    """Delete a resource."""
+    try:
+        sql = "DELETE FROM resources WHERE id = %s AND project = %s"
+        execute(sql, [resource_id, project])
+        return jsonify({'status': 'deleted'})
     except Exception as e:
         return jsonify({'error': str(e)}), 500
