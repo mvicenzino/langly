@@ -29,9 +29,9 @@ interface DragState {
   sourceStatus: string | null;
 }
 
-const STORAGE_KEY = 'kindora_tasks';
+const STORAGE_KEY = 'stride_tasks';
 
-export function ProjectSprintWidget() {
+export function StrideSprintWidget() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [allSprintTasks, setAllSprintTasks] = useState<Task[]>([]);
   const [summary, setSummary] = useState<DaySummary>({
@@ -46,110 +46,21 @@ export function ProjectSprintWidget() {
   const [dragState, setDragState] = useState<DragState>({ taskId: null, sourceStatus: null });
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
   const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
-  const [calendarEvents, setCalendarEvents] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [newNote, setNewNote] = useState('');
 
-  // Load tasks from localStorage or initialize with Calendora launch plan
+  // Load tasks from localStorage
   const loadTasks = () => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      let allTasks = [];
+      let allTasks: Task[] = [];
 
       if (stored) {
         allTasks = JSON.parse(stored);
-      } else {
-        // Initialize with Calendora launch spring tasks
-        const today = new Date().toISOString().split('T')[0];
-        allTasks = [
-          // Week 1-2 (Feb 18 - Mar 3): Core lockdown
-          {
-            id: 'task_1',
-            title: 'Calendora core features locked down',
-            status: 'in_progress',
-            priority: 'high',
-            dueDate: '2026-02-25',
-          },
-          {
-            id: 'task_2',
-            title: 'Mobile UX responsive design pass',
-            status: 'todo',
-            priority: 'high',
-            dueDate: '2026-02-24',
-          },
-          {
-            id: 'task_3',
-            title: 'Test on iPhone, iPad, Android',
-            status: 'todo',
-            priority: 'high',
-            dueDate: '2026-02-27',
-          },
-          {
-            id: 'task_4',
-            title: 'Caregiver permissions model validated',
-            status: 'todo',
-            priority: 'high',
-            dueDate: '2026-02-25',
-          },
-          {
-            id: 'task_5',
-            title: 'User onboarding docs written',
-            status: 'todo',
-            priority: 'normal',
-            dueDate: '2026-03-01',
-          },
-          // Week 3 (Mar 4-10): Beta
-          {
-            id: 'task_6',
-            title: 'Beta launch with 3-5 families',
-            status: 'todo',
-            priority: 'high',
-            dueDate: '2026-03-04',
-          },
-          {
-            id: 'task_7',
-            title: 'Gather beta feedback',
-            status: 'todo',
-            priority: 'high',
-            dueDate: '2026-03-10',
-          },
-          {
-            id: 'task_8',
-            title: 'Fix critical bugs from beta',
-            status: 'todo',
-            priority: 'high',
-            dueDate: '2026-03-10',
-          },
-          // Week 4 (Mar 11-15): Polish & launch
-          {
-            id: 'task_9',
-            title: 'Final UX polish',
-            status: 'todo',
-            priority: 'normal',
-            dueDate: '2026-03-11',
-          },
-          {
-            id: 'task_10',
-            title: 'Production deploy & smoke tests',
-            status: 'todo',
-            priority: 'high',
-            dueDate: '2026-03-14',
-          },
-          {
-            id: 'task_11',
-            title: 'Go live - Calendora v1.0',
-            status: 'todo',
-            priority: 'high',
-            dueDate: '2026-03-15',
-          },
-        ];
-
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(allTasks));
       }
 
       setAllSprintTasks(allTasks);
 
-      // Set display tasks based on default view mode (kanban shows all)
       if (viewMode === 'today') {
         const today = new Date().toISOString().split('T')[0];
         const todayTasks = allTasks.filter((t: Task) => t.dueDate === today || t.status === 'in_progress');
@@ -177,8 +88,7 @@ export function ProjectSprintWidget() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedTasks));
       setAllSprintTasks(updatedTasks);
-      
-      // Update display based on view mode - let useEffect handle calendar event merging
+
       if (viewMode === 'today') {
         const today = new Date().toISOString().split('T')[0];
         const todayTasks = updatedTasks.filter((t: Task) => t.dueDate === today || t.status === 'in_progress');
@@ -193,50 +103,10 @@ export function ProjectSprintWidget() {
     }
   };
 
-  // Fetch today's calendar events from Calendora via backend proxy (avoids CORS)
-  const fetchTodayEvents = async () => {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      const response = await fetch('/api/calendar/calendora/events');
-      
-      if (response.ok) {
-        const events = await response.json();
-        
-        // Filter events for today and convert to tasks
-        const todayEvents = events
-          .filter((e: any) => {
-            const eventDate = e.startTime.split('T')[0];
-            return eventDate === today;
-          })
-          .map((e: any) => ({
-            id: `cal_${e.id}`,
-            title: e.title,
-            description: e.description || '',
-            status: 'in_progress' as const,
-            priority: 'normal' as const,
-            dueDate: today,
-          }));
-        
-        setCalendarEvents(todayEvents);
-      }
-    } catch (error) {
-      console.error('Error fetching calendar events:', error);
-    }
-  };
-
   useEffect(() => {
     loadTasks();
-    fetchTodayEvents();
-    
-    // Refresh calendar events every 60 seconds to stay in sync
-    const interval = setInterval(() => {
-      fetchTodayEvents();
-    }, 60000);
-    
-    return () => clearInterval(interval);
   }, []);
 
-  // When sprint data changes or we switch to today view, refresh the display
   useEffect(() => {
     if (viewMode === 'today') {
       const today = new Date().toISOString().split('T')[0];
@@ -246,7 +116,6 @@ export function ProjectSprintWidget() {
     }
   }, [allSprintTasks, viewMode]);
 
-  // Add new task
   const handleAddTask = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTaskTitle.trim()) return;
@@ -265,7 +134,6 @@ export function ProjectSprintWidget() {
     setNewTaskTitle('');
   };
 
-  // Update task status
   const handleUpdateStatus = (taskId: string, newStatus: string) => {
     const updatedAllTasks = allSprintTasks.map(t =>
       t.id === taskId ? { ...t, status: newStatus as 'todo' | 'in_progress' | 'done' } : t
@@ -273,13 +141,11 @@ export function ProjectSprintWidget() {
     saveTasks(updatedAllTasks);
   };
 
-  // Delete task
   const handleDeleteTask = (taskId: string) => {
     const updatedAllTasks = allSprintTasks.filter(t => t.id !== taskId);
     saveTasks(updatedAllTasks);
   };
 
-  // Drag and drop handlers
   const handleDragStart = (taskId: string, status: string) => {
     setDragState({ taskId, sourceStatus: status });
   };
@@ -330,8 +196,11 @@ export function ProjectSprintWidget() {
     const draggedTask = allSprintTasks.find(t => t.id === dragState.taskId);
     if (!draggedTask) return;
 
+    // Remove dragged task from array
     const without = allSprintTasks.filter(t => t.id !== dragState.taskId);
+    // Find target position in filtered array
     const targetIdx = without.findIndex(t => t.id === targetTaskId);
+    // Insert before the target task, updating status if cross-column
     const updated = { ...draggedTask, status: targetStatus as 'todo' | 'in_progress' | 'done' };
     without.splice(targetIdx, 0, updated);
 
@@ -347,7 +216,6 @@ export function ProjectSprintWidget() {
     setDragOverTaskId(null);
   };
 
-  // Note handlers
   const handleAddNote = (taskId: string) => {
     if (!newNote.trim()) return;
     const note: TaskNote = {
@@ -359,7 +227,6 @@ export function ProjectSprintWidget() {
       t.id === taskId ? { ...t, notes: [...(t.notes || []), note] } : t
     );
     saveTasks(updatedAllTasks);
-    // Update selectedTask to reflect the new note
     const updated = updatedAllTasks.find(t => t.id === taskId);
     if (updated) setSelectedTask(updated);
     setNewNote('');
@@ -374,7 +241,6 @@ export function ProjectSprintWidget() {
     if (updated) setSelectedTask(updated);
   };
 
-  // Close modal on Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setSelectedTask(null);
@@ -410,7 +276,7 @@ export function ProjectSprintWidget() {
         dragState.taskId === task.id
           ? 'opacity-50 bg-slate-800'
           : dragOverTaskId === task.id && dragState.taskId
-          ? 'bg-slate-700/50 border-blue-400 border-t-4'
+          ? 'bg-slate-700/50 border-purple-400 border-t-4'
           : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'
       }`}
     >
@@ -458,7 +324,6 @@ export function ProjectSprintWidget() {
       key={task.id}
       className="flex items-start gap-3 p-3 bg-slate-700/30 rounded hover:bg-slate-700/50 transition border border-slate-600/50"
     >
-      {/* Status Icon */}
       <button
         onClick={() =>
           handleUpdateStatus(
@@ -477,7 +342,6 @@ export function ProjectSprintWidget() {
         )}
       </button>
 
-      {/* Task Content */}
       <div className="flex-1 min-w-0">
         <button
           onClick={() => setSelectedTask(task)}
@@ -496,7 +360,6 @@ export function ProjectSprintWidget() {
         )}
       </div>
 
-      {/* Priority Badge & Actions */}
       <div className="flex items-center gap-2 flex-shrink-0">
         {task.priority !== 'normal' && (
           <span className={`text-xs px-2 py-0.5 rounded ${getPriorityColor(task.priority)}`}>
@@ -518,8 +381,8 @@ export function ProjectSprintWidget() {
       {/* Header with View Toggle */}
       <div className="mb-6 flex items-start justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-100">Calendora Launch Sprint</h2>
-          <p className="text-sm text-gray-400 mt-1">Feb 18 - Mar 15 • Drag tasks to move</p>
+          <h2 className="text-xl font-semibold text-gray-100">Stride Sprint</h2>
+          <p className="text-sm text-gray-400 mt-1">Drag tasks to move between columns</p>
         </div>
         <div className="flex gap-2">
           <button
@@ -530,7 +393,7 @@ export function ProjectSprintWidget() {
             }}
             className={`px-3 py-1 rounded text-xs font-medium transition ${
               viewMode === 'kanban'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-purple-600 text-white'
                 : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
             }`}
           >
@@ -546,7 +409,7 @@ export function ProjectSprintWidget() {
             }}
             className={`px-3 py-1 rounded text-xs font-medium transition ${
               viewMode === 'today'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-purple-600 text-white'
                 : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
             }`}
           >
@@ -560,7 +423,7 @@ export function ProjectSprintWidget() {
             }}
             className={`px-3 py-1 rounded text-xs font-medium transition ${
               viewMode === 'list'
-                ? 'bg-blue-600 text-white'
+                ? 'bg-purple-600 text-white'
                 : 'bg-slate-700 text-gray-300 hover:bg-slate-600'
             }`}
           >
@@ -597,11 +460,11 @@ export function ProjectSprintWidget() {
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
             placeholder={viewMode === 'today' ? 'Add a task for today...' : 'Add a task...'}
-            className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600 rounded text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50"
+            className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600 rounded text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50"
           />
           <button
             type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm flex items-center gap-1 font-medium transition"
+            className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm flex items-center gap-1 font-medium transition"
           >
             <Plus size={16} />
             Add
@@ -612,7 +475,7 @@ export function ProjectSprintWidget() {
             type="date"
             value={newTaskDate}
             onChange={(e) => setNewTaskDate(e.target.value)}
-            className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded text-sm text-gray-100 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50"
+            className="w-full px-3 py-2 bg-slate-700/50 border border-slate-600 rounded text-sm text-gray-100 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50"
           />
         )}
       </form>
@@ -708,7 +571,7 @@ export function ProjectSprintWidget() {
         <div className="space-y-2 max-h-96 overflow-y-auto">
           {tasks.length === 0 ? (
             <div className="text-center py-8 text-gray-500 text-sm">
-              {viewMode === 'today' ? 'No tasks for today. Great job! 🎉' : 'No tasks in sprint.'}
+              {viewMode === 'today' ? 'No tasks for today. Add some to get started!' : 'No tasks yet. Add your first task above!'}
             </div>
           ) : viewMode === 'list' ? (
             Object.entries(
@@ -734,8 +597,8 @@ export function ProjectSprintWidget() {
       {/* Footer */}
       <div className="mt-6 pt-4 border-t border-slate-700 text-xs text-gray-500">
         {viewMode === 'kanban'
-          ? '🖱️ Drag tasks between columns to change status'
-          : '📋 Click status icon to cycle: To Do → In Progress → Done'}
+          ? 'Drag tasks between columns to change status'
+          : 'Click status icon to cycle: To Do → In Progress → Done'}
       </div>
 
       {/* Task Notes Modal */}
@@ -817,12 +680,12 @@ export function ProjectSprintWidget() {
                   value={newNote}
                   onChange={(e) => setNewNote(e.target.value)}
                   placeholder="Add a note..."
-                  className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600 rounded text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400/50"
+                  className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600 rounded text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-purple-400 focus:ring-1 focus:ring-purple-400/50"
                   autoFocus
                 />
                 <button
                   type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm font-medium transition"
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm font-medium transition"
                 >
                   Add Note
                 </button>

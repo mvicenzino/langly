@@ -128,12 +128,12 @@ export function Sidebar({ activeCategory, onSelectCategory, collapsed, onToggleC
               <div key={item.id} className="my-2 mx-1 border-t border-white/5" />
             );
           }
-          // Skip langly from main list — it renders as a sub-item under projects
-          if (item.id === 'langly') return null;
+          // Skip langly and stride from main list — they render as sub-items under projects
+          if (item.id === 'langly' || item.id === 'stride') return null;
 
           const IconFn = iconMap[item.icon];
           const isProjectsParent = item.id === 'projects';
-          const projectsExpanded = isProjectsParent && (activeCategory === 'projects' || activeCategory === 'langly');
+          const projectsExpanded = isProjectsParent && (activeCategory === 'projects' || activeCategory === 'langly' || activeCategory === 'stride');
           const active = isProjectsParent ? projectsExpanded : activeCategory === item.id;
 
           return (
@@ -161,7 +161,7 @@ export function Sidebar({ activeCategory, onSelectCategory, collapsed, onToggleC
 
               {/* Sub-items under Projects */}
               {isProjectsParent && !collapsed && (
-                <div className={`ml-4 mt-0.5 space-y-0.5 overflow-hidden transition-all ${projectsExpanded ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'}`}>
+                <div className={`ml-4 mt-0.5 space-y-0.5 overflow-hidden transition-all ${projectsExpanded ? 'max-h-28 opacity-100' : 'max-h-0 opacity-0'}`}>
                   <button
                     onClick={() => onSelectCategory('projects')}
                     className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-1.5 transition-all group ${
@@ -190,6 +190,21 @@ export function Sidebar({ activeCategory, onSelectCategory, collapsed, onToggleC
                       activeCategory === 'langly' ? 'text-gray-200' : 'text-gray-500 group-hover:text-gray-300'
                     }`}>
                       Langly
+                    </span>
+                  </button>
+                  <button
+                    onClick={() => onSelectCategory('stride')}
+                    className={`w-full flex items-center gap-2.5 rounded-md px-2.5 py-1.5 transition-all group ${
+                      activeCategory === 'stride'
+                        ? 'bg-purple-500/10 border border-purple-500/20'
+                        : 'border border-transparent hover:bg-white/[0.03]'
+                    }`}
+                  >
+                    <span className={`h-1.5 w-1.5 rounded-full ${activeCategory === 'stride' ? 'bg-purple-400' : 'bg-gray-600'}`} />
+                    <span className={`text-[10px] font-medium tracking-wide transition-colors ${
+                      activeCategory === 'stride' ? 'text-gray-200' : 'text-gray-500 group-hover:text-gray-300'
+                    }`}>
+                      Stride
                     </span>
                   </button>
                 </div>

@@ -37,6 +37,7 @@ import { ContentCalendar } from './components/layout/ContentCalendar';
 import { DailyBriefView } from './components/views/DailyBriefView';
 import { ProjectsView } from './components/views/ProjectsView';
 import { LanglyProjectsView } from './components/views/LanglyProjectsView';
+import { StrideProjectsView } from './components/views/StrideProjectsView';
 import { commandCategories } from './config/commandCategories';
 import { useChat } from './hooks/useChat';
 import { useInsightStore } from './store/insightStore';
@@ -56,6 +57,9 @@ const categoryTabs: Record<string, { id: string; label: string }[]> = {
   ],
   'langly': [
     { id: 'main', label: 'Langly' },
+  ],
+  'stride': [
+    { id: 'main', label: 'Stride' },
   ],
   'personal-finance': [
     { id: 'main', label: 'My Finances' },
@@ -349,6 +353,11 @@ function Dashboard() {
                         {/* ─── Projects: Langly ──────────────────────── */}
                         {activeCategory === 'langly' && (
                           <LanglyProjectsView />
+                        )}
+
+                        {/* ─── Projects: Stride ──────────────────────── */}
+                        {activeCategory === 'stride' && (
+                          <StrideProjectsView />
                         )}
 
                         {/* ─── Personal Finance ─────────────────────── */}

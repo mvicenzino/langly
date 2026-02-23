@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, CheckCircle2, Circle, Clock, Trash2, GripHorizontal } from 'lucide-react';
+import { Plus, CheckCircle2, Circle, Clock, Trash2, GripHorizontal, X, MessageSquare } from 'lucide-react';
+
+interface TaskNote {
+  id: string;
+  text: string;
+  createdAt: string;
+}
 
 interface Task {
   id: string;
@@ -8,6 +14,7 @@ interface Task {
   status: 'todo' | 'in_progress' | 'done';
   priority: 'low' | 'normal' | 'high';
   dueDate: string;
+  notes?: TaskNote[];
 }
 
 interface DaySummary {
@@ -38,6 +45,9 @@ export function LanglySprintWidget() {
   const [viewMode, setViewMode] = useState<'today' | 'kanban' | 'list'>('kanban');
   const [dragState, setDragState] = useState<DragState>({ taskId: null, sourceStatus: null });
   const [dragOverColumn, setDragOverColumn] = useState<string | null>(null);
+  const [dragOverTaskId, setDragOverTaskId] = useState<string | null>(null);
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [newNote, setNewNote] = useState('');
 
   // Load tasks from localStorage
   const loadTasks = () => {
@@ -51,11 +61,17 @@ export function LanglySprintWidget() {
       // Empty by default — template ready to fill in
 
       setAllSprintTasks(allTasks);
-      updateSummary(allTasks);
 
-      const today = new Date().toISOString().split('T')[0];
-      const todayTasks = allTasks.filter((t: Task) => t.dueDate === today);
-      setTasks(todayTasks);
+      // Set display tasks based on default view mode (kanban shows all)
+      if (viewMode === 'today') {
+        const today = new Date().toISOString().split('T')[0];
+        const todayTasks = allTasks.filter((t: Task) => t.dueDate === today || t.status === 'in_progress');
+        setTasks(todayTasks);
+        updateSummary(todayTasks);
+      } else {
+        setTasks(allTasks);
+        updateSummary(allTasks);
+      }
     } catch (error) {
       console.error('Error loading tasks:', error);
     }
@@ -77,7 +93,7 @@ export function LanglySprintWidget() {
 
       if (viewMode === 'today') {
         const today = new Date().toISOString().split('T')[0];
-        const todayTasks = updatedTasks.filter((t: Task) => t.dueDate === today);
+        const todayTasks = updatedTasks.filter((t: Task) => t.dueDate === today || t.status === 'in_progress');
         setTasks(todayTasks);
         updateSummary(todayTasks);
       } else {
@@ -97,7 +113,7 @@ export function LanglySprintWidget() {
   useEffect(() => {
     if (viewMode === 'today') {
       const today = new Date().toISOString().split('T')[0];
-      const todayTasks = allSprintTasks.filter((t) => t.dueDate === today);
+      const todayTasks = allSprintTasks.filter((t) => t.dueDate === today || t.status === 'in_progress');
       setTasks(todayTasks);
       updateSummary(todayTasks);
     }
@@ -164,12 +180,82 @@ export function LanglySprintWidget() {
 
     setDragState({ taskId: null, sourceStatus: null });
     setDragOverColumn(null);
+    setDragOverTaskId(null);
+  };
+
+  const handleTaskDragOver = (e: React.DragEvent, taskId: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOverTaskId(taskId);
+  };
+
+  const handleTaskDrop = (e: React.DragEvent, targetTaskId: string, targetStatus: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!dragState.taskId || dragState.taskId === targetTaskId) {
+      setDragState({ taskId: null, sourceStatus: null });
+      setDragOverColumn(null);
+      setDragOverTaskId(null);
+      return;
+    }
+
+    const draggedTask = allSprintTasks.find(t => t.id === dragState.taskId);
+    if (!draggedTask) return;
+
+    const without = allSprintTasks.filter(t => t.id !== dragState.taskId);
+    const targetIdx = without.findIndex(t => t.id === targetTaskId);
+    const updated = { ...draggedTask, status: targetStatus as 'todo' | 'in_progress' | 'done' };
+    without.splice(targetIdx, 0, updated);
+
+    saveTasks(without);
+    setDragState({ taskId: null, sourceStatus: null });
+    setDragOverColumn(null);
+    setDragOverTaskId(null);
   };
 
   const handleDragEnd = () => {
     setDragState({ taskId: null, sourceStatus: null });
     setDragOverColumn(null);
+    setDragOverTaskId(null);
   };
+
+  // Note handlers
+  const handleAddNote = (taskId: string) => {
+    if (!newNote.trim()) return;
+    const note: TaskNote = {
+      id: `note_${Date.now()}`,
+      text: newNote.trim(),
+      createdAt: new Date().toISOString(),
+    };
+    const updatedAllTasks = allSprintTasks.map(t =>
+      t.id === taskId ? { ...t, notes: [...(t.notes || []), note] } : t
+    );
+    saveTasks(updatedAllTasks);
+    const updated = updatedAllTasks.find(t => t.id === taskId);
+    if (updated) setSelectedTask(updated);
+    setNewNote('');
+  };
+
+  const handleDeleteNote = (taskId: string, noteId: string) => {
+    const updatedAllTasks = allSprintTasks.map(t =>
+      t.id === taskId ? { ...t, notes: (t.notes || []).filter(n => n.id !== noteId) } : t
+    );
+    saveTasks(updatedAllTasks);
+    const updated = updatedAllTasks.find(t => t.id === taskId);
+    if (updated) setSelectedTask(updated);
+  };
+
+  // Close modal on Escape
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedTask(null);
+    };
+    if (selectedTask) {
+      document.addEventListener('keydown', handleKeyDown);
+      return () => document.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [selectedTask]);
 
   const getPriorityColor = (priority: string) => {
     const colors = {
@@ -189,22 +275,27 @@ export function LanglySprintWidget() {
       key={task.id}
       draggable
       onDragStart={() => handleDragStart(task.id, task.status)}
+      onDragOver={(e) => handleTaskDragOver(e, task.id)}
+      onDrop={(e) => handleTaskDrop(e, task.id, task.status)}
       onDragEnd={handleDragEnd}
       className={`p-3 rounded border-2 cursor-grab active:cursor-grabbing transition ${
         dragState.taskId === task.id
           ? 'opacity-50 bg-slate-800'
+          : dragOverTaskId === task.id && dragState.taskId
+          ? 'bg-slate-700/50 border-cyan-400 border-t-4'
           : 'bg-slate-700/50 border-slate-600 hover:border-slate-500'
       }`}
     >
       <div className="flex items-start gap-2 mb-2">
         <GripHorizontal size={14} className="text-gray-500 mt-0.5 flex-shrink-0" />
-        <div
-          className={`text-sm font-medium flex-1 ${
+        <button
+          onClick={() => setSelectedTask(task)}
+          className={`text-sm font-medium flex-1 text-left hover:underline cursor-pointer ${
             task.status === 'done' ? 'line-through text-gray-500' : 'text-gray-100'
           }`}
         >
           {task.title}
-        </div>
+        </button>
         <button
           onClick={() => handleDeleteTask(task.id)}
           className="text-gray-500 hover:text-red-400 focus:outline-none transition flex-shrink-0"
@@ -220,6 +311,12 @@ export function LanglySprintWidget() {
           {task.priority !== 'normal' && (
             <span className={`text-xs px-2 py-0.5 rounded-full ${getPriorityColor(task.priority)}`}>
               {task.priority}
+            </span>
+          )}
+          {(task.notes?.length ?? 0) > 0 && (
+            <span className="flex items-center gap-1 text-xs text-gray-400">
+              <MessageSquare size={12} />
+              {task.notes!.length}
             </span>
           )}
         </div>
@@ -254,14 +351,21 @@ export function LanglySprintWidget() {
 
       {/* Task Content */}
       <div className="flex-1 min-w-0">
-        <div
-          className={`text-sm font-medium ${
+        <button
+          onClick={() => setSelectedTask(task)}
+          className={`text-sm font-medium text-left hover:underline cursor-pointer ${
             task.status === 'done' ? 'line-through text-gray-500' : 'text-gray-100'
           }`}
         >
           {task.title}
-        </div>
+        </button>
         {task.description && <div className="text-xs text-gray-400 mt-1">{task.description}</div>}
+        {(task.notes?.length ?? 0) > 0 && (
+          <span className="flex items-center gap-1 text-xs text-gray-400 mt-1">
+            <MessageSquare size={12} />
+            {task.notes!.length} note{task.notes!.length !== 1 ? 's' : ''}
+          </span>
+        )}
       </div>
 
       {/* Priority Badge & Actions */}
@@ -308,7 +412,7 @@ export function LanglySprintWidget() {
             onClick={() => {
               setViewMode('today');
               const today = new Date().toISOString().split('T')[0];
-              const todayTasks = allSprintTasks.filter((t) => t.dueDate === today);
+              const todayTasks = allSprintTasks.filter((t) => t.dueDate === today || t.status === 'in_progress');
               setTasks(todayTasks);
               updateSummary(todayTasks);
             }}
@@ -387,7 +491,7 @@ export function LanglySprintWidget() {
 
       {/* Kanban Board View */}
       {viewMode === 'kanban' && (
-        <div className="grid grid-cols-3 gap-4 max-h-96">
+        <div className="grid grid-cols-3 gap-4">
           {/* To Do Column */}
           <div
             onDragOver={(e) => handleDragOver(e, 'todo')}
@@ -505,6 +609,100 @@ export function LanglySprintWidget() {
           ? 'Drag tasks between columns to change status'
           : 'Click status icon to cycle: To Do → In Progress → Done'}
       </div>
+
+      {/* Task Notes Modal */}
+      {selectedTask && (
+        <div
+          className="fixed inset-0 bg-black/60 flex items-center justify-center z-50"
+          onClick={() => setSelectedTask(null)}
+        >
+          <div
+            className="bg-slate-800 border border-slate-600 rounded-lg w-full max-w-lg mx-4 max-h-[80vh] flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 border-b border-slate-700 flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-semibold text-gray-100 truncate">{selectedTask.title}</h3>
+                <div className="flex items-center gap-2 mt-2 flex-wrap">
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${
+                    selectedTask.status === 'done' ? 'bg-green-500/20 text-green-300 border border-green-500/30' :
+                    selectedTask.status === 'in_progress' ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/30' :
+                    'bg-blue-500/20 text-blue-300 border border-blue-500/30'
+                  }`}>
+                    {selectedTask.status === 'in_progress' ? 'In Progress' : selectedTask.status === 'done' ? 'Done' : 'To Do'}
+                  </span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${getPriorityColor(selectedTask.priority)}`}>
+                    {selectedTask.priority}
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    Due {new Date(selectedTask.dueDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                </div>
+              </div>
+              <button
+                onClick={() => setSelectedTask(null)}
+                className="text-gray-400 hover:text-gray-200 transition ml-2 flex-shrink-0"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Notes List */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+              {(!selectedTask.notes || selectedTask.notes.length === 0) ? (
+                <div className="text-center py-8 text-gray-500 text-sm">No notes yet. Add one below.</div>
+              ) : (
+                selectedTask.notes.map((note) => (
+                  <div key={note.id} className="bg-slate-700/50 border border-slate-600 rounded p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-sm text-gray-200 whitespace-pre-wrap flex-1">{note.text}</p>
+                      <button
+                        onClick={() => handleDeleteNote(selectedTask.id, note.id)}
+                        className="text-gray-500 hover:text-red-400 transition flex-shrink-0"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-2">
+                      {new Date(note.createdAt).toLocaleString('en-US', {
+                        month: 'short', day: 'numeric', year: 'numeric',
+                        hour: 'numeric', minute: '2-digit',
+                      })}
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Add Note Input */}
+            <div className="p-4 border-t border-slate-700">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  handleAddNote(selectedTask.id);
+                }}
+                className="flex gap-2"
+              >
+                <input
+                  type="text"
+                  value={newNote}
+                  onChange={(e) => setNewNote(e.target.value)}
+                  placeholder="Add a note..."
+                  className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600 rounded text-sm text-gray-100 placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/50"
+                  autoFocus
+                />
+                <button
+                  type="submit"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white px-4 py-2 rounded text-sm font-medium transition"
+                >
+                  Add Note
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

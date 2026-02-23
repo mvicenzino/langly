@@ -49,6 +49,17 @@ export const commandCategories: CommandCategory[] = [
     ],
   },
   {
+    id: 'stride',
+    name: 'Stride',
+    icon: 'trending-up',
+    color: 'purple',
+    commands: [
+      { id: 'stride-content', name: 'Content Strategy', prompt: 'Help me plan content for Stride — my personal brand at the intersection of AI strategy, product thinking, and analytics leadership. Suggest 3 LinkedIn post ideas based on trending AI/data topics this week, and help me draft the best one. Tone: professional, grounded, strategic.' },
+      { id: 'stride-standup', name: 'Daily Standup', prompt: 'Give me a quick daily standup for Stride: what I completed yesterday on content/brand building, what I\'m focused on today, any blockers. Keep it to 3-5 bullet points.' },
+      { id: 'stride-week-plan', name: 'Week Planning', prompt: 'Help me plan the week for Stride brand development. What are the top 3-5 things that will move the needle forward? Break them into daily tasks. Prioritize ruthlessly.' },
+    ],
+  },
+  {
     id: 'career-growth',
     name: 'Career Agent',
     icon: 'briefcase',
