@@ -1,6 +1,7 @@
 import React from 'react';
 import { ProjectSprintWidget } from '../widgets/ProjectSprintWidget';
-import { ExternalLink, Target, Zap } from 'lucide-react';
+import { Target, Zap } from 'lucide-react';
+import { ResourcesCard } from '../widgets/ResourcesCard';
 
 export function ProjectsView() {
   return (
@@ -41,56 +42,7 @@ export function ProjectsView() {
           </div>
 
           {/* Resources Card */}
-          <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg border border-slate-700 p-4">
-            <h3 className="font-semibold text-gray-100 mb-3">Resources</h3>
-            <div className="space-y-2">
-              <a
-                href="https://calendora.replit.app"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium group"
-              >
-                <span>→ Calendora App</span>
-                <ExternalLink size={14} className="opacity-0 group-hover:opacity-100" />
-              </a>
-              <a
-                href="https://docs.google.com/document/d/1-7fEvj1eYUEO4WaD734UmC6dbAUO42GxKHyEoAOF7AI"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium group"
-              >
-                <span>→ Launch Plan Doc</span>
-                <ExternalLink size={14} className="opacity-0 group-hover:opacity-100" />
-              </a>
-              <a
-                href="https://github.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium group"
-              >
-                <span>→ Code Repository</span>
-                <ExternalLink size={14} className="opacity-0 group-hover:opacity-100" />
-              </a>
-              <a
-                href="https://docs.google.com/document/d/1PTmA-sUfD7VPu2q9T0EbyzhNXC28nlVz/edit"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium group"
-              >
-                <span>→ Kindora Family Inc Business Plan and Roadmap</span>
-                <ExternalLink size={14} className="opacity-0 group-hover:opacity-100" />
-              </a>
-              <a
-                href="https://drive.google.com/file/d/1XeI1knHlRcI1AoWTUGgvIr5Su6cLHixI/view?usp=drive_link"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 text-blue-400 hover:text-blue-300 text-sm font-medium group"
-              >
-                <span>→ Kindora Pitch Deck</span>
-                <ExternalLink size={14} className="opacity-0 group-hover:opacity-100" />
-              </a>
-            </div>
-          </div>
+          <ResourcesCard project="calendora" />
 
           {/* Today's Focus Card */}
           <div className="bg-blue-900/20 rounded-lg border border-blue-700/30 p-4">

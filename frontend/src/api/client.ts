@@ -59,6 +59,33 @@ export async function apiDelete<T>(path: string): Promise<T> {
   return res.json();
 }
 
+// ── Resources ────────────────────────────────────────────────────────────────
+
+export interface Resource {
+  id: number;
+  project: string;
+  name: string;
+  url: string;
+  description: string;
+  resource_type: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface ResourceInput {
+  name: string;
+  url: string;
+  description?: string;
+  type?: string;
+}
+
+export const resourcesApi = {
+  getAll: (project: string) => apiGet<Resource[]>(`/api/projects/${project}/resources`),
+  create: (project: string, data: ResourceInput) => apiPost<Resource>(`/api/projects/${project}/resources`, data),
+  update: (project: string, id: number, data: Partial<ResourceInput>) => apiPut<Resource>(`/api/projects/${project}/resources/${id}`, data),
+  delete: (project: string, id: number) => apiDelete<{ status: string }>(`/api/projects/${project}/resources/${id}`),
+};
+
 // ── Calendar (Kindora) ──────────────────────────────────────────────────────
 
 import type { CalendarEvent, FamilyMember, CareDocument, CalendarMedication } from '../types/calendar';
