@@ -32,6 +32,7 @@ import { TripPlannerWidget } from './components/widgets/TripPlannerWidget';
 import { FlightSearchWidget } from './components/widgets/FlightSearchWidget';
 import { HotelSearchWidget } from './components/widgets/HotelSearchWidget';
 import { OpenClawDoctorWidget } from './components/widgets/OpenClawDoctorWidget';
+import { GitHubReposWidget } from './components/widgets/GitHubReposWidget';
 import { TravelInsightsWidget } from './components/widgets/TravelInsightsWidget';
 import { ContentCalendar } from './components/layout/ContentCalendar';
 import { DailyBriefView } from './components/views/DailyBriefView';
@@ -278,6 +279,7 @@ function Dashboard() {
                         <div key="todos"><TodoWidget /></div>
                         <div key="notes"><NotesWidget /></div>
                         <div key="key-docs"><KeyDocsWidget /></div>
+                        <div key="github"><GitHubReposWidget /></div>
                       </WidgetGrid>
                     </>
                   )}

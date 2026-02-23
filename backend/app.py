@@ -41,6 +41,7 @@ def create_app():
     from backend.api.emails import emails_bp
     from backend.api.projects import projects_bp
     from backend.api.sync import sync_bp
+    from backend.api.github import github_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(health_bp)
@@ -67,6 +68,7 @@ def create_app():
     app.register_blueprint(emails_bp)
     app.register_blueprint(projects_bp)
     app.register_blueprint(sync_bp)
+    app.register_blueprint(github_bp)
 
     # Register socket handlers
     from backend.sockets.chat_handler import register_handlers

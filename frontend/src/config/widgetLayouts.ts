@@ -50,8 +50,9 @@ export const PAGE_LAYOUTS: Record<string, PageLayout> = {
       item('todos', 0, 4, 4, 4),
       item('notes', 4, 4, 4, 4),
       item('activity', 8, 4, 4, 4),
-      item('key-docs', 0, 8, 6, 4),
-      item('system', 6, 8, 6, 4),
+      item('key-docs', 0, 8, 4, 4),
+      item('github', 4, 8, 4, 4),
+      item('system', 8, 8, 4, 4),
     ]),
   },
 
