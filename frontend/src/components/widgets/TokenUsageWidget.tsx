@@ -114,6 +114,7 @@ export function TokenUsageWidget() {
   useEffect(() => { load(); }, [load]);
 
   return (
+    <>
     <WidgetPanel
       title="Token Usage"
       icon={<Zap size={14} className="text-green-400" />}
@@ -224,8 +225,9 @@ export function TokenUsageWidget() {
     </WidgetPanel>
 
     {/* Anthropic Gmail receipts */}
-    <WidgetPanel title="Anthropic API Costs" icon={<DollarSign size={14} />} defaultOpen>
+    <WidgetPanel title="Anthropic API Costs" icon={<DollarSign size={14} />}>
       <AnthropicCostsWidget />
     </WidgetPanel>
+    </>
   );
 }
