@@ -24,15 +24,25 @@ type Tab = 'daily' | 'weekly' | 'monthly' | 'recent';
 
 const API = 'http://localhost:5001';
 
-function fmt(n: number) {
-  return `$${n.toFixed(2)}`;
-}
+const fmt = (n: number) => `$${n.toFixed(2)}`;
 
 function Bar({ value, max, color }: { value: number; max: number; color: string }) {
   const pct = max > 0 ? Math.min((value / max) * 100, 100) : 0;
   return (
-    <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.08)', borderRadius: 99, overflow: 'hidden' }}>
+    <div style={{ flex: 1, height: 6, background: 'rgba(255,255,255,0.07)', borderRadius: 99, overflow: 'hidden' }}>
       <div style={{ width: `${pct}%`, height: '100%', background: color, borderRadius: 99, transition: 'width 0.4s ease' }} />
+    </div>
+  );
+}
+
+function InsightBadge({ color, children }: { color: string; children: React.ReactNode }) {
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'flex-start', gap: 8,
+      background: `${color}12`, border: `1px solid ${color}30`,
+      borderRadius: 10, padding: '10px 14px', fontSize: 12.5, color: '#e2e8f0', lineHeight: 1.55,
+    }}>
+      {children}
     </div>
   );
 }
@@ -48,13 +58,11 @@ export default function AnthropicCostsWidget() {
     try {
       if (refresh) setRefreshing(true);
       const url = refresh ? `${API}/api/anthropic/costs/refresh` : `${API}/api/anthropic/costs`;
-      const method = refresh ? 'POST' : 'GET';
-      const res = await fetch(url, { method });
-      const json = await res.json();
-      setData(json);
+      const res = await fetch(url, { method: refresh ? 'POST' : 'GET' });
+      setData(await res.json());
       setError('');
-    } catch (e) {
-      setError('Failed to load cost data');
+    } catch {
+      setError('Failed to load — is Langly running?');
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -63,65 +71,60 @@ export default function AnthropicCostsWidget() {
 
   useEffect(() => { load(); }, []);
 
-  const accent = '#a78bfa'; // purple
+  const accent = '#a78bfa';
   const green  = '#34d399';
   const amber  = '#fbbf24';
   const blue   = '#60a5fa';
-
-  const cardStyle: React.CSSProperties = {
-    background: 'rgba(255,255,255,0.05)',
-    border: '1px solid rgba(255,255,255,0.1)',
-    borderRadius: 12,
-    padding: '14px 16px',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 4,
-  };
+  const red    = '#f87171';
 
   const tabStyle = (active: boolean): React.CSSProperties => ({
-    padding: '5px 14px',
-    borderRadius: 20,
-    border: 'none',
-    cursor: 'pointer',
-    fontSize: 12,
-    fontWeight: 600,
+    padding: '4px 12px', borderRadius: 20, border: 'none', cursor: 'pointer',
+    fontSize: 11.5, fontWeight: 600,
     background: active ? accent : 'rgba(255,255,255,0.06)',
-    color: active ? '#fff' : 'rgba(255,255,255,0.5)',
+    color: active ? '#fff' : 'rgba(255,255,255,0.45)',
     transition: 'all 0.15s',
   });
 
   if (loading) return (
-    <div style={{ padding: 24, color: 'rgba(255,255,255,0.4)', fontSize: 13, textAlign: 'center' }}>
-      Loading Anthropic receipts from Gmail… this takes ~30s on first load
+    <div style={{ padding: '24px 20px', color: 'rgba(255,255,255,0.35)', fontSize: 12.5, textAlign: 'center' }}>
+      ⏳ Scanning Gmail for Anthropic receipts… takes ~30s on first load
     </div>
   );
 
-  if (error) return (
-    <div style={{ padding: 24, color: '#f87171', fontSize: 13 }}>{error}</div>
-  );
-
+  if (error) return <div style={{ padding: 20, color: red, fontSize: 13 }}>{error}</div>;
   if (!data) return null;
 
   const { summary, daily, weekly, monthly, recent } = data;
+
+  // Compute insights
+  const today = new Date().toISOString().slice(0, 10);
+  const dayOfMonth = new Date().getDate();
+  const projectedMonthly = dayOfMonth > 0 ? (summary.this_month.total / dayOfMonth) * 30 : 0;
+  const avgPerReceipt = summary.all_time.count > 0 ? summary.all_time.total / summary.all_time.count : 0;
+  const autoRechargeStart = '2026-02-01';
+  const autoRechargeMonths = monthly.filter(m => m.month_key >= '2026-02');
+  const autoRechargeTotal = autoRechargeMonths.reduce((s, m) => s + m.total, 0);
+  const priorTotal = summary.all_time.total - autoRechargeTotal;
 
   const maxDaily   = Math.max(...daily.map(d => d.total), 1);
   const maxWeekly  = Math.max(...weekly.map(w => w.total), 1);
   const maxMonthly = Math.max(...monthly.map(m => m.total), 1);
 
   return (
-    <div style={{ padding: '16px 20px 24px', display: 'flex', flexDirection: 'column', gap: 20, color: '#e2e8f0', fontFamily: 'inherit' }}>
+    <div style={{ padding: '16px 20px 24px', display: 'flex', flexDirection: 'column', gap: 18, color: '#e2e8f0', fontFamily: 'inherit' }}>
 
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
         <div>
           <div style={{ fontSize: 15, fontWeight: 700, color: '#f8fafc' }}>Anthropic Spend</div>
-          <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.4)', marginTop: 2 }}>Auto-recharge receipts from Gmail</div>
+          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', marginTop: 2 }}>
+            {summary.all_time.count} receipts · Oct 2024 – now · parsed from Gmail
+          </div>
         </div>
-        <button
-          onClick={() => load(true)}
-          disabled={refreshing}
-          style={{ padding: '5px 12px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.15)', background: 'transparent', color: 'rgba(255,255,255,0.5)', fontSize: 11, cursor: 'pointer' }}
-        >
+        <button onClick={() => load(true)} disabled={refreshing} style={{
+          padding: '4px 12px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.12)',
+          background: 'transparent', color: 'rgba(255,255,255,0.4)', fontSize: 11, cursor: 'pointer',
+        }}>
           {refreshing ? '⟳ Refreshing…' : '⟳ Refresh'}
         </button>
       </div>
@@ -134,91 +137,145 @@ export default function AnthropicCostsWidget() {
           { label: 'This Month', val: summary.this_month.total, count: summary.this_month.count, color: amber },
           { label: 'All Time', val: summary.all_time.total, count: summary.all_time.count, color: accent },
         ].map(({ label, val, count, color }) => (
-          <div key={label} style={{ ...cardStyle, borderTop: `2px solid ${color}` }}>
-            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.4)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{label}</div>
-            <div style={{ fontSize: 22, fontWeight: 800, color: '#f8fafc', lineHeight: 1.1 }}>{fmt(val)}</div>
-            <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)' }}>{count} receipt{count !== 1 ? 's' : ''}</div>
+          <div key={label} style={{
+            background: 'rgba(255,255,255,0.04)', border: `1px solid rgba(255,255,255,0.08)`,
+            borderTop: `2px solid ${color}`, borderRadius: 10, padding: '12px 14px',
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '.06em' }}>{label}</div>
+            <div style={{ fontSize: 20, fontWeight: 800, color: '#f8fafc', lineHeight: 1.15, marginTop: 4 }}>{fmt(val)}</div>
+            <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.3)', marginTop: 2 }}>{count} receipt{count !== 1 ? 's' : ''}</div>
           </div>
         ))}
       </div>
 
-      {/* Tabs */}
-      <div style={{ display: 'flex', gap: 6 }}>
-        {(['daily', 'weekly', 'monthly', 'recent'] as Tab[]).map(t => (
-          <button key={t} style={tabStyle(tab === t)} onClick={() => setTab(t)}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
-          </button>
-        ))}
+      {/* Insights */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(255,255,255,0.35)', textTransform: 'uppercase', letterSpacing: '.07em' }}>💡 Insights</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+
+          <InsightBadge color={red}>
+            <span>🔥</span>
+            <span>
+              <strong style={{ color: '#f8fafc' }}>Burn rate: {fmt(projectedMonthly)}/mo</strong><br />
+              At today's pace ({fmt(summary.this_month.total)} in {dayOfMonth} days), you're on track to spend ~{fmt(projectedMonthly)} this month.
+            </span>
+          </InsightBadge>
+
+          <InsightBadge color={amber}>
+            <span>⚡</span>
+            <span>
+              <strong style={{ color: '#f8fafc' }}>Auto-recharge kicked in Feb 2026</strong><br />
+              Before: flat $20–$100/mo. After: {fmt(avgPerReceipt)} avg per auto-recharge, multiple times daily.
+            </span>
+          </InsightBadge>
+
+          <InsightBadge color={blue}>
+            <span>📊</span>
+            <span>
+              <strong style={{ color: '#f8fafc' }}>17-month total: {fmt(summary.all_time.total)}</strong><br />
+              {fmt(priorTotal)} pre–Feb 2026 · {fmt(autoRechargeTotal)} since auto-recharge started.
+            </span>
+          </InsightBadge>
+
+          <InsightBadge color={green}>
+            <span>📬</span>
+            <span>
+              <strong style={{ color: '#f8fafc' }}>{summary.today.count} recharges today · {summary.this_week.count} this week</strong><br />
+              Average {summary.all_time.count > 0 ? (summary.all_time.count / 17).toFixed(1) : '—'} receipts/month across the full history.
+            </span>
+          </InsightBadge>
+
+        </div>
       </div>
 
-      {/* Daily */}
-      {tab === 'daily' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {daily.filter(d => d.total > 0 || d.date >= new Date(Date.now() - 7*86400000).toISOString().slice(0,10)).map(d => (
-            <div key={d.date} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 72, fontSize: 11.5, color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>
-                {new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-              </div>
-              <Bar value={d.total} max={maxDaily} color={green} />
-              <div style={{ width: 52, textAlign: 'right', fontSize: 12, fontWeight: 600, color: d.total > 0 ? '#f8fafc' : 'rgba(255,255,255,0.2)', flexShrink: 0 }}>
-                {d.total > 0 ? fmt(d.total) : '—'}
-              </div>
-              <div style={{ width: 28, textAlign: 'right', fontSize: 10, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
-                {d.count > 0 ? `×${d.count}` : ''}
-              </div>
-            </div>
+      {/* Tabs + chart */}
+      <div>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 14 }}>
+          {(['daily', 'weekly', 'monthly', 'recent'] as Tab[]).map(t => (
+            <button key={t} style={tabStyle(tab === t)} onClick={() => setTab(t)}>
+              {t.charAt(0).toUpperCase() + t.slice(1)}
+            </button>
           ))}
         </div>
-      )}
 
-      {/* Weekly */}
-      {tab === 'weekly' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {weekly.map(w => (
-            <div key={w.week_start} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 110, fontSize: 11.5, color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>{w.week}</div>
-              <Bar value={w.total} max={maxWeekly} color={blue} />
-              <div style={{ width: 60, textAlign: 'right', fontSize: 12, fontWeight: 600, color: w.total > 0 ? '#f8fafc' : 'rgba(255,255,255,0.2)', flexShrink: 0 }}>
-                {w.total > 0 ? fmt(w.total) : '—'}
+        {/* Daily */}
+        {tab === 'daily' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            {daily.map(d => (
+              <div key={d.date} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 68, fontSize: 11, color: d.date === today ? green : 'rgba(255,255,255,0.4)', flexShrink: 0, fontWeight: d.date === today ? 700 : 400 }}>
+                  {d.date === today ? 'Today' : new Date(d.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                </div>
+                <Bar value={d.total} max={maxDaily} color={d.date === today ? green : 'rgba(52,211,153,0.5)'} />
+                <div style={{ width: 52, textAlign: 'right', fontSize: 12, fontWeight: 600, color: d.total > 0 ? '#f8fafc' : 'rgba(255,255,255,0.15)', flexShrink: 0 }}>
+                  {d.total > 0 ? fmt(d.total) : '—'}
+                </div>
+                <div style={{ width: 26, textAlign: 'right', fontSize: 10, color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>
+                  {d.count > 0 ? `×${d.count}` : ''}
+                </div>
               </div>
-              <div style={{ width: 28, textAlign: 'right', fontSize: 10, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
-                {w.count > 0 ? `×${w.count}` : ''}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {/* Monthly */}
-      {tab === 'monthly' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {monthly.map(m => (
-            <div key={m.month_key} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ width: 72, fontSize: 11.5, color: 'rgba(255,255,255,0.5)', flexShrink: 0 }}>{m.month}</div>
-              <Bar value={m.total} max={maxMonthly} color={amber} />
-              <div style={{ width: 60, textAlign: 'right', fontSize: 12, fontWeight: 600, color: m.total > 0 ? '#f8fafc' : 'rgba(255,255,255,0.2)', flexShrink: 0 }}>
-                {m.total > 0 ? fmt(m.total) : '—'}
+        {/* Weekly */}
+        {tab === 'weekly' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            {weekly.map((w, i) => (
+              <div key={w.week_start} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 108, fontSize: 11, color: i === weekly.length - 1 ? blue : 'rgba(255,255,255,0.4)', flexShrink: 0, fontWeight: i === weekly.length - 1 ? 700 : 400 }}>
+                  {i === weekly.length - 1 ? `This wk` : w.week}
+                </div>
+                <Bar value={w.total} max={maxWeekly} color={i === weekly.length - 1 ? blue : 'rgba(96,165,250,0.5)'} />
+                <div style={{ width: 56, textAlign: 'right', fontSize: 12, fontWeight: 600, color: w.total > 0 ? '#f8fafc' : 'rgba(255,255,255,0.15)', flexShrink: 0 }}>
+                  {w.total > 0 ? fmt(w.total) : '—'}
+                </div>
+                <div style={{ width: 26, textAlign: 'right', fontSize: 10, color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>
+                  {w.count > 0 ? `×${w.count}` : ''}
+                </div>
               </div>
-              <div style={{ width: 28, textAlign: 'right', fontSize: 10, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>
-                {m.count > 0 ? `×${m.count}` : ''}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
 
-      {/* Recent receipts */}
-      {tab === 'recent' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          {recent.map(r => (
-            <div key={r.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '7px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
-              <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.35)', flexShrink: 0, width: 72 }}>{r.date}</div>
-              <div style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.5)', flex: 1, fontFamily: 'monospace' }}>#{r.receipt}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>{fmt(r.amount)}</div>
-            </div>
-          ))}
-        </div>
-      )}
+        {/* Monthly */}
+        {tab === 'monthly' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 7 }}>
+            {monthly.map((m, i) => (
+              <div key={m.month_key} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <div style={{ width: 68, fontSize: 11, color: i === monthly.length - 1 ? amber : 'rgba(255,255,255,0.4)', flexShrink: 0, fontWeight: i === monthly.length - 1 ? 700 : 400 }}>
+                  {m.month}
+                </div>
+                <Bar value={m.total} max={maxMonthly} color={m.month_key >= '2026-02' ? amber : 'rgba(251,191,36,0.3)'} />
+                <div style={{ width: 56, textAlign: 'right', fontSize: 12, fontWeight: 600, color: m.total > 0 ? '#f8fafc' : 'rgba(255,255,255,0.15)', flexShrink: 0 }}>
+                  {m.total > 0 ? fmt(m.total) : '—'}
+                </div>
+                <div style={{ width: 26, textAlign: 'right', fontSize: 10, color: 'rgba(255,255,255,0.25)', flexShrink: 0 }}>
+                  {m.count > 0 ? `×${m.count}` : ''}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Recent */}
+        {tab === 'recent' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {recent.map(r => (
+              <div key={r.id} style={{
+                display: 'flex', alignItems: 'center', gap: 10,
+                padding: '7px 10px', borderRadius: 8,
+                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+              }}>
+                <div style={{ fontSize: 10.5, color: 'rgba(255,255,255,0.3)', flexShrink: 0, width: 72 }}>{r.date}</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', flex: 1, fontFamily: 'monospace' }}>#{r.receipt}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>{fmt(r.amount)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
