@@ -11,6 +11,8 @@ import { SettingsPanel } from './components/layout/SettingsPanel';
 import { WidgetGrid } from './components/layout/DashboardGrid';
 import { ChatPanel } from './components/chat/ChatPanel';
 import { StockWidget } from './components/widgets/StockWidget';
+import { TokenUsageWidget } from './components/widgets/TokenUsageWidget';
+import { OpenClawStatsWidget } from './components/widgets/OpenClawStatsWidget';
 import { WeatherWidget } from './components/widgets/WeatherWidget';
 import { TodoWidget } from './components/widgets/TodoWidget';
 import { NotesWidget } from './components/widgets/NotesWidget';
@@ -118,7 +120,8 @@ function App() {
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!authChecked) return null;
-  if (!token) return <LoginScreen />;
+  // Login screen disabled — local use only
+  // if (!token) return <LoginScreen />;
   return <Dashboard />;
 }
 
@@ -289,6 +292,8 @@ function Dashboard() {
                     <WidgetGrid pageId="dashboard-operations">
                       <div key="openclaw-doctor"><OpenClawDoctorWidget /></div>
                       <div key="system"><SystemWidget /></div>
+                      <div key="token-usage"><TokenUsageWidget /></div>
+                      <div key="openclaw-stats"><OpenClawStatsWidget /></div>
                       <div key="activity"><ActivityWidget /></div>
                     </WidgetGrid>
                   )}

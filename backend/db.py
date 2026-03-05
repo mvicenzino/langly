@@ -203,6 +203,18 @@ def init_tables():
                     trip_id INTEGER REFERENCES trips(id) ON DELETE SET NULL,
                     created_at TIMESTAMPTZ DEFAULT NOW()
                 );
+                CREATE TABLE IF NOT EXISTS token_usage (
+                    id SERIAL PRIMARY KEY,
+                    source TEXT NOT NULL DEFAULT 'langly',
+                    model TEXT NOT NULL DEFAULT 'gpt-4o-mini',
+                    prompt_tokens INTEGER NOT NULL DEFAULT 0,
+                    completion_tokens INTEGER NOT NULL DEFAULT 0,
+                    total_tokens INTEGER NOT NULL DEFAULT 0,
+                    cost_usd NUMERIC(10,6) NOT NULL DEFAULT 0,
+                    session_id TEXT DEFAULT '',
+                    context TEXT DEFAULT '',
+                    created_at TIMESTAMPTZ DEFAULT NOW()
+                );
             """)
             # Add columns to existing tables (safe idempotent migration)
             try:
