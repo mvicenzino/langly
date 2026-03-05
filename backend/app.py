@@ -44,6 +44,7 @@ def create_app():
     from backend.api.github import github_bp
     from backend.api.token_usage import token_usage_bp
     from backend.api.openclaw_stats import openclaw_stats_bp
+    from backend.api.anthropic_costs import anthropic_costs_bp
 
     app.register_blueprint(auth_bp)
     app.register_blueprint(health_bp)
@@ -73,6 +74,7 @@ def create_app():
     app.register_blueprint(github_bp)
     app.register_blueprint(token_usage_bp)
     app.register_blueprint(openclaw_stats_bp)
+    app.register_blueprint(anthropic_costs_bp)
 
     # Register socket handlers
     from backend.sockets.chat_handler import register_handlers
