@@ -63,14 +63,13 @@ def register_handlers(socketio: SocketIO):
                 # If fast path fails, fall through to full agent
                 pass
 
-        # ── Full agent path ──────────────────────────────────────────
-        print("[SOCKET] Entering full agent path", flush=True)
-        from backend.agent.wrapper import get_executor
+        # ── Full agent path (tiered: Haiku for simple, Sonnet for complex) ─
+        from backend.agent.wrapper import get_executor_for_query
 
         callback = StreamingCallbackHandler()
         try:
-            executor = get_executor()
-            print(f"[SOCKET] Got executor: {type(executor).__name__}", flush=True)
+            executor, tier = get_executor_for_query(user_message)
+            print(f"[SOCKET] Agent tier: {tier} for: {user_message[:60]}", flush=True)
         except Exception as e:
             print(f"[SOCKET] ERROR getting executor: {e}", flush=True)
             emit("chat:error", {"error": f"Agent initialization failed: {e}"})
@@ -141,6 +140,26 @@ def register_handlers(socketio: SocketIO):
                         f"Q: {user_message[:80]}",
                         {"tools": tools_used, "response_len": len(response_text)}
                     )
+                except Exception:
+                    pass
+                # Log token usage for cost tracking
+                try:
+                    import requests as _req
+                    model = callback.model or ('claude-sonnet-4' if tier == 'sonnet' else 'claude-haiku')
+                    if callback.prompt_tokens or callback.completion_tokens:
+                        def _log_tokens():
+                            try:
+                                _req.post('http://localhost:5001/api/token-usage/log', json={
+                                    'source': 'langly',
+                                    'model': model,
+                                    'prompt_tokens': callback.prompt_tokens,
+                                    'completion_tokens': callback.completion_tokens,
+                                    'session_id': '',
+                                    'context': user_message[:120],
+                                }, timeout=3)
+                            except Exception:
+                                pass
+                        threading.Thread(target=_log_tokens, daemon=True).start()
                 except Exception:
                     pass
                 break

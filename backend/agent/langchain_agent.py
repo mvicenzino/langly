@@ -11,6 +11,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
 from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 try:
     from langchain.agents import AgentExecutor, create_react_agent
 except ImportError:
@@ -794,8 +795,14 @@ tools = [
                      "Input: a natural language query about finances."),
 ]
 
-# Set up the LLM
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+# ── Tiered LLM setup ──────────────────────────────────────────────────────
+# Haiku: simple single-tool queries | Sonnet: complex multi-tool chains
+# NOTE: Anthropic API limit hit until April 1, 2026 — using GPT-4o fallback.
+# When limit resets, swap these two lines back:
+#   llm_fast = ChatAnthropic(model="claude-haiku-4-5-20251001", temperature=0)
+#   llm_deep = ChatAnthropic(model="claude-sonnet-4-5-20250929", temperature=0)
+llm_fast = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+llm_deep = ChatOpenAI(model="gpt-4o", temperature=0)
 
 # Load family profile for personalized responses
 try:
@@ -805,7 +812,7 @@ except ImportError:
 
 # ReAct prompt template
 _profile_block = f"\n{FAMILY_PROFILE}\n\n" if FAMILY_PROFILE else ""
-prompt = PromptTemplate.from_template(
+_prompt_template = (
     _profile_block + """Answer the following questions as best you can. You have access to the following tools:
 
 {tools}
@@ -826,10 +833,66 @@ Begin!
 Question: {input}
 Thought:{agent_scratchpad}"""
 )
+prompt = PromptTemplate.from_template(_prompt_template)
 
-# Create the agent
-agent = create_react_agent(llm, tools, prompt)
-executor = AgentExecutor(agent=agent, tools=tools, verbose=True, handle_parsing_errors=True, max_iterations=25)
+# Create tiered executors
+agent_fast = create_react_agent(llm_fast, tools, prompt)
+agent_deep = create_react_agent(llm_deep, tools, prompt)
+executor_fast = AgentExecutor(agent=agent_fast, tools=tools, verbose=True, handle_parsing_errors=True, max_iterations=15)
+executor_deep = AgentExecutor(agent=agent_deep, tools=tools, verbose=True, handle_parsing_errors=True, max_iterations=25)
+
+# Default executor (Haiku) for backwards compat
+executor = executor_fast
+
+
+# ── Query complexity classifier ───────────────────────────────────────────
+_COMPLEX_PATTERNS = re.compile(
+    r'(?i)'
+    r'compare|analyze|analys[ei]s|correlat|trend|insight|recommend|suggest|advise'
+    r'|summarize\s+(my|all|this\s+month|this\s+week|everything)'
+    r'|what\s+should\s+i|how\s+am\s+i\s+doing|am\s+i\s+on\s+track'
+    r'|budget.*spend|spend.*budget|income.*expens|expens.*income'
+    r'|plan\s+(my|a\s+trip|travel)|itinerary|flight.*hotel|hotel.*flight'
+    r'|write\s+(me\s+)?a\s+(cover|email|report|brief)|draft\s+(a|me)'
+    r'|research|investigate|look\s+into|dig\s+into|deep\s+dive'
+)
+
+# Domain keywords — if query touches 2+ domains, it's complex
+_DOMAIN_KEYWORDS = {
+    'finance':  re.compile(r'(?i)budget|spend|money|account|balance|net\s*worth|income|expense|savings|cashflow|recurring|subscription|monarch'),
+    'calendar': re.compile(r'(?i)calendar|event|schedule|appointment|meeting|kindora'),
+    'stocks':   re.compile(r'(?i)stock|portfolio|share|market|ticker|aapl|tsla|googl|snow|pltr'),
+    'jobs':     re.compile(r'(?i)job|application|interview|resume|cover\s*letter|stride|hiring'),
+    'email':    re.compile(r'(?i)email|send\s+(a\s+)?message|mail|gmail'),
+    'code':     re.compile(r'(?i)python|code|script|git|docker|sql|regex|shell|command'),
+    'web':      re.compile(r'(?i)search|web|url|scrape|wikipedia|fetch'),
+}
+
+
+def classify_complexity(query):
+    """Return 'deep' for complex queries, 'fast' for simple ones."""
+    # Explicit complex patterns
+    if _COMPLEX_PATTERNS.search(query):
+        return 'deep'
+
+    # Multi-domain detection
+    domains_hit = sum(1 for p in _DOMAIN_KEYWORDS.values() if p.search(query))
+    if domains_hit >= 2:
+        return 'deep'
+
+    # Long queries with conjunctions often need multi-step reasoning
+    if len(query) > 150 and re.search(r'(?i)\band\b.*\band\b|\bthen\b|\bafter\s+that\b', query):
+        return 'deep'
+
+    return 'fast'
+
+
+def get_executor_for_query(query):
+    """Return the appropriate executor and tier name for a query."""
+    tier = classify_complexity(query)
+    if tier == 'deep':
+        return executor_deep, 'sonnet'
+    return executor_fast, 'haiku'
 
 # Interactive loop
 if __name__ == "__main__":

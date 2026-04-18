@@ -28,6 +28,11 @@ def get_executor():
     return _executor
 
 
+def get_executor_for_query(query):
+    """Return (executor, tier_name) based on query complexity."""
+    return langchain_agent.get_executor_for_query(query)
+
+
 def get_tools():
     return _tools
 
@@ -44,12 +49,15 @@ def run_query(user_input: str, session_id: str = '') -> dict:
         def __init__(self):
             self.prompt_tokens = 0
             self.completion_tokens = 0
+            self.model = ""
 
         def on_llm_end(self, response, **kwargs):
             try:
                 usage = response.llm_output.get('token_usage', {}) if response.llm_output else {}
                 self.prompt_tokens += usage.get('prompt_tokens', 0)
                 self.completion_tokens += usage.get('completion_tokens', 0)
+                if not self.model and response.llm_output:
+                    self.model = response.llm_output.get('model_name', '')
             except Exception:
                 pass
 
@@ -65,7 +73,7 @@ def run_query(user_input: str, session_id: str = '') -> dict:
             try:
                 _req.post('http://localhost:5001/api/token-usage/log', json={
                     'source': 'langly',
-                    'model': 'gpt-4o-mini',
+                    'model': token_logger.model or 'gpt-4o',
                     'prompt_tokens': token_logger.prompt_tokens,
                     'completion_tokens': token_logger.completion_tokens,
                     'session_id': session_id,

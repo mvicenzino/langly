@@ -13,6 +13,19 @@ class StreamingCallbackHandler(BaseCallbackHandler):
     def __init__(self):
         self.queue: queue.Queue = queue.Queue()
         self._done = False
+        self.prompt_tokens = 0
+        self.completion_tokens = 0
+        self.model = ""
+
+    def on_llm_end(self, response, **kwargs: Any) -> None:
+        try:
+            usage = response.llm_output.get('token_usage', {}) if response.llm_output else {}
+            self.prompt_tokens += usage.get('prompt_tokens', 0)
+            self.completion_tokens += usage.get('completion_tokens', 0)
+            if not self.model and response.llm_output:
+                self.model = response.llm_output.get('model_name', '')
+        except Exception:
+            pass
 
     def on_llm_new_token(self, token: str, **kwargs: Any) -> None:
         self.queue.put({"event": "token", "data": token})

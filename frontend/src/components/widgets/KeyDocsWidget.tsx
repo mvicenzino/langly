@@ -15,7 +15,7 @@ interface DocGroup {
   files: DocFile[];
 }
 
-const API = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+const API = import.meta.env.VITE_API_URL || '';
 
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return '';

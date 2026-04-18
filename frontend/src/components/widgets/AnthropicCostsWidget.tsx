@@ -22,7 +22,7 @@ interface CostData {
 
 type Tab = 'daily' | 'weekly' | 'monthly' | 'recent';
 
-const API = 'http://localhost:5001';
+const API = import.meta.env.VITE_API_URL || '';
 
 const fmt = (n: number) => `$${n.toFixed(2)}`;
 

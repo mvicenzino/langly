@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from 'react';
 import { WidgetPanel } from '../layout/WidgetPanel';
 import { LoadingSpinner } from '../shared/LoadingSpinner';
 import { Zap, TrendingUp, DollarSign, RefreshCw } from 'lucide-react';
-import AnthropicCostsWidget from './AnthropicCostsWidget';
 
 interface Stats {
   today:      { cost: number; tokens: number };
@@ -114,7 +113,6 @@ export function TokenUsageWidget() {
   useEffect(() => { load(); }, [load]);
 
   return (
-    <>
     <WidgetPanel
       title="Token Usage"
       icon={<Zap size={14} className="text-green-400" />}
@@ -223,11 +221,5 @@ export function TokenUsageWidget() {
         </div>
       ) : null}
     </WidgetPanel>
-
-    {/* Anthropic Gmail receipts */}
-    <WidgetPanel title="Anthropic API Costs" icon={<DollarSign size={14} />}>
-      <AnthropicCostsWidget />
-    </WidgetPanel>
-    </>
   );
 }

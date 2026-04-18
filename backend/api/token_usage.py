@@ -7,13 +7,15 @@ token_usage_bp = Blueprint('token_usage', __name__)
 
 # ── Pricing per 1K tokens (USD) ──────────────────────────────────────────────
 MODEL_PRICING = {
-    'gpt-4o':          {'input': 0.005,    'output': 0.015},
-    'gpt-4o-mini':     {'input': 0.000150, 'output': 0.000600},
-    'gpt-4-turbo':     {'input': 0.010,    'output': 0.030},
-    'gpt-4':           {'input': 0.030,    'output': 0.060},
-    'gpt-3.5-turbo':   {'input': 0.0005,   'output': 0.0015},
-    'claude-sonnet-4': {'input': 0.003,    'output': 0.015},
-    'claude-haiku':    {'input': 0.00025,  'output': 0.00125},
+    'gpt-4o':                          {'input': 0.005,    'output': 0.015},
+    'gpt-4o-mini':                     {'input': 0.000150, 'output': 0.000600},
+    'gpt-4-turbo':                     {'input': 0.010,    'output': 0.030},
+    'gpt-4':                           {'input': 0.030,    'output': 0.060},
+    'gpt-3.5-turbo':                   {'input': 0.0005,   'output': 0.0015},
+    'claude-sonnet-4':                 {'input': 0.003,    'output': 0.015},
+    'claude-sonnet-4-5-20250929':      {'input': 0.003,    'output': 0.015},
+    'claude-haiku':                    {'input': 0.00025,  'output': 0.00125},
+    'claude-haiku-4-5-20251001':       {'input': 0.00025,  'output': 0.00125},
 }
 
 

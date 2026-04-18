@@ -15,7 +15,7 @@ OPENCLAW_MEMORY = OPENCLAW_DIR / "memory" / "main.sqlite"
 GATEWAY_PORT = int(os.getenv("OPENCLAW_GATEWAY_PORT", "18789"))
 GATEWAY_TOKEN = os.getenv(
     "OPENCLAW_GATEWAY_TOKEN",
-    "c6665a00952e2b93d38e3a6ca1cf22a55ae013415b6c425c"
+    "d872fcb8bfb65c1f667c384e799480c9db98b0ef6f0967dc"
 )
 
 
@@ -301,8 +301,15 @@ def _get_openclaw_metrics():
     version = config.get("meta", {}).get("lastTouchedVersion", "unknown")
     
     # 5. Heartbeat Interval
-    heartbeat_interval = config.get("gateway", {}).get("heartbeatMs", 1800000)
-    heartbeat_interval_min = heartbeat_interval // 60000
+    heartbeat_cfg = config.get("agents", {}).get("defaults", {}).get("heartbeat", {})
+    heartbeat_every = heartbeat_cfg.get("every", "60m")
+    # Parse "60m" format to minutes
+    try:
+        heartbeat_interval_min = int(heartbeat_every.rstrip("mh"))
+        if heartbeat_every.endswith("h"):
+            heartbeat_interval_min *= 60
+    except (ValueError, AttributeError):
+        heartbeat_interval_min = 60
     
     return {
         "timestamp": datetime.now(timezone.utc).isoformat(),

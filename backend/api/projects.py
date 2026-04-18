@@ -2,6 +2,9 @@
 from flask import Blueprint, request, jsonify
 from datetime import datetime, date
 from backend.db import query, execute, execute_returning
+import os
+import json
+import re
 
 projects_bp = Blueprint('projects', __name__)
 
@@ -351,5 +354,178 @@ def delete_resource(project, resource_id):
         sql = "DELETE FROM resources WHERE id = %s AND project = %s"
         execute(sql, [resource_id, project])
         return jsonify({'status': 'deleted'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# ============================================================================
+# HERMES/OBSIDIAN DASHBOARD API
+# ============================================================================
+
+def read_markdown_file(filepath):
+    """Read and parse a markdown file."""
+    try:
+        if not os.path.exists(filepath):
+            return None
+        with open(filepath, 'r') as f:
+            return f.read()
+    except Exception as e:
+        print(f"Error reading {filepath}: {e}")
+        return None
+
+
+def extract_frontmatter(content):
+    """Extract YAML frontmatter from markdown."""
+    if not content or not content.startswith('---'):
+        return {}, content
+    
+    try:
+        parts = content.split('---', 2)
+        if len(parts) < 3:
+            return {}, content
+        
+        fm_text = parts[1]
+        body = parts[2]
+        
+        # Simple YAML parser for our use case
+        fm = {}
+        for line in fm_text.strip().split('\n'):
+            if ':' in line:
+                key, value = line.split(':', 1)
+                key = key.strip()
+                value = value.strip()
+                # Remove quotes if present
+                if value.startswith('"') and value.endswith('"'):
+                    value = value[1:-1]
+                elif value.startswith("'") and value.endswith("'"):
+                    value = value[1:-1]
+                fm[key] = value
+        
+        return fm, body
+    except Exception as e:
+        print(f"Error parsing frontmatter: {e}")
+        return {}, content
+
+
+def parse_projects_dashboard():
+    """Parse Obsidian projects and return structured data."""
+    obsidian_path = os.path.expanduser('~/Documents/Obsidian-Hermes/Hermes/entities/Active-Projects')
+    
+    if not os.path.exists(obsidian_path):
+        return {
+            'error': 'Obsidian vault not found',
+            'path': obsidian_path
+        }
+    
+    projects = {}
+    critical_items = []
+    revenue_total = 0
+    
+    # Read all .md files in Active-Projects
+    for filename in os.listdir(obsidian_path):
+        if not filename.endswith('.md'):
+            continue
+        
+        filepath = os.path.join(obsidian_path, filename)
+        content = read_markdown_file(filepath)
+        if not content:
+            continue
+        
+        fm, body = extract_frontmatter(content)
+        
+        # Skip dashboard and meta files
+        if filename in ['DASHBOARD.md']:
+            continue
+        
+        # Extract project name (remove .md)
+        project_name = filename.replace('.md', '')
+        
+        # Extract blockers from content (look for 🔴 markers and checklists)
+        blockers = []
+        lines = body.split('\n')
+        for i, line in enumerate(lines):
+            if '🔴' in line or '[ ]' in line:
+                # Clean up the line
+                clean_line = line.replace('- [ ]', '').replace('- [x]', '').strip()
+                if clean_line and len(clean_line) > 3:
+                    blockers.append(clean_line)
+        
+        # Extract deadline if present
+        deadline = fm.get('deadline') or fm.get('due')
+        
+        # Determine status color
+        status = fm.get('status', 'unknown')
+        status_color = {
+            'Live': '🟢',
+            'Active': '🔵',
+            'Planning': '🔵',
+            'Under Review': '🔵',
+            'In Progress': '🔵',
+            'Completed': '✅'
+        }.get(status, '⚪')
+        
+        # Extract revenue if mentioned
+        revenue = fm.get('revenue', '')
+        
+        projects[project_name] = {
+            'name': project_name,
+            'status': status,
+            'status_color': status_color,
+            'type': fm.get('type', 'project'),
+            'deadline': deadline,
+            'blockers': blockers[:3],  # Top 3 blockers
+            'revenue': revenue,
+            'canonical_path': fm.get('canonical') or f'~/Documents/Active/{project_name}/',
+            'file': filename
+        }
+        
+        # Track critical items
+        if '🔴' in body or 'URGENT' in body:
+            if deadline:
+                critical_items.append({
+                    'project': project_name,
+                    'deadline': deadline,
+                    'blockers': blockers[:2]
+                })
+    
+    # Sort critical items by deadline
+    critical_items.sort(key=lambda x: x['deadline'] or '9999-12-31')
+    
+    return {
+        'projects': projects,
+        'critical_items': critical_items[:3],  # Top 3 critical
+        'total_projects': len(projects),
+        'last_updated': datetime.now().isoformat()
+    }
+
+
+@projects_bp.route('/api/projects/dashboard/hermes', methods=['GET'])
+def get_hermes_dashboard():
+    """Get Hermes/Obsidian projects dashboard (visual summary)."""
+    try:
+        dashboard = parse_projects_dashboard()
+        return jsonify(dashboard)
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@projects_bp.route('/api/projects/dashboard/hermes/<project_name>', methods=['GET'])
+def get_hermes_project(project_name):
+    """Get detailed view of a specific Hermes project."""
+    try:
+        obsidian_path = os.path.expanduser(f'~/Documents/Obsidian-Hermes/Hermes/entities/Active-Projects/{project_name}.md')
+        
+        content = read_markdown_file(obsidian_path)
+        if not content:
+            return jsonify({'error': 'Project not found'}), 404
+        
+        fm, body = extract_frontmatter(content)
+        
+        return jsonify({
+            'name': project_name,
+            'frontmatter': fm,
+            'body': body,
+            'file_path': obsidian_path
+        })
     except Exception as e:
         return jsonify({'error': str(e)}), 500

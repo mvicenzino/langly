@@ -12,6 +12,7 @@ import { WidgetGrid } from './components/layout/DashboardGrid';
 import { ChatPanel } from './components/chat/ChatPanel';
 import { StockWidget } from './components/widgets/StockWidget';
 import { TokenUsageWidget } from './components/widgets/TokenUsageWidget';
+import AnthropicCostsWidget from './components/widgets/AnthropicCostsWidget';
 import { OpenClawStatsWidget } from './components/widgets/OpenClawStatsWidget';
 import { WeatherWidget } from './components/widgets/WeatherWidget';
 import { TodoWidget } from './components/widgets/TodoWidget';
@@ -41,6 +42,7 @@ import { DailyBriefView } from './components/views/DailyBriefView';
 import { ProjectsView } from './components/views/ProjectsView';
 import { LanglyProjectsView } from './components/views/LanglyProjectsView';
 import { StrideProjectsView } from './components/views/StrideProjectsView';
+import { HermesProjectsView } from './components/views/HermesProjectsView';
 import { commandCategories } from './config/commandCategories';
 import { useChat } from './hooks/useChat';
 import { useInsightStore } from './store/insightStore';
@@ -57,6 +59,7 @@ const categoryTabs: Record<string, { id: string; label: string }[]> = {
   ],
   'projects': [
     { id: 'main', label: 'Kindora Projects' },
+    { id: 'hermes', label: 'Hermes Dashboard' },
   ],
   'langly': [
     { id: 'main', label: 'Langly' },
@@ -293,6 +296,7 @@ function Dashboard() {
                       <div key="openclaw-doctor"><OpenClawDoctorWidget /></div>
                       <div key="system"><SystemWidget /></div>
                       <div key="token-usage"><TokenUsageWidget /></div>
+                      <div key="anthropic-costs"><AnthropicCostsWidget /></div>
                       <div key="openclaw-stats"><OpenClawStatsWidget /></div>
                       <div key="activity"><ActivityWidget /></div>
                     </WidgetGrid>
@@ -353,8 +357,13 @@ function Dashboard() {
                         )}
 
                         {/* ─── Projects: Kindora ─────────────────────── */}
-                        {activeCategory === 'projects' && (
+                        {activeCategory === 'projects' && activeTab === 'main' && (
                           <ProjectsView />
+                        )}
+
+                        {/* ─── Projects: Hermes Dashboard ────────────── */}
+                        {activeCategory === 'projects' && activeTab === 'hermes' && (
+                          <HermesProjectsView />
                         )}
 
                         {/* ─── Projects: Langly ──────────────────────── */}

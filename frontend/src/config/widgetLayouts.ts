@@ -56,6 +56,17 @@ export const PAGE_LAYOUTS: Record<string, PageLayout> = {
     ]),
   },
 
+  // ─── Operations (OpenClaw stats, token usage, Anthropic costs) ─
+  'dashboard-operations': {
+    rowHeight: 61,
+    layouts: responsive([
+      item('openclaw-doctor', 0, 0, 4, 4),
+      item('token-usage',     4, 0, 4, 4),
+      item('openclaw-stats',  8, 0, 4, 4),
+      item('anthropic-costs', 0, 4, 8, 7),
+    ]),
+  },
+
   // ─── Personal Finance (finances + markets combined) ─
   'personal-finance-main': {
     rowHeight: 71,
