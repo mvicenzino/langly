@@ -59,7 +59,7 @@ const categoryTabs: Record<string, { id: string; label: string }[]> = {
   ],
   'projects': [
     { id: 'main', label: 'Kindora Projects' },
-    { id: 'hermes', label: 'Hermes Dashboard' },
+    { id: 'hermes', label: '🚀 Hermes Dashboard' },
   ],
   'langly': [
     { id: 'main', label: 'Langly' },
